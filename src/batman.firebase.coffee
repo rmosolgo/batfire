@@ -23,8 +23,8 @@ class Batman.Firebase.Storage extends Batman.StorageAdapter
     clearLoaded = @model.clear
     @model.clear = =>
       result = clearLoaded.apply(@model)
+      @_listeningToList = false
       delete @firebaseListRef
-      delete @_listListener
       result
 
     loadRecords = @model.load
@@ -33,8 +33,15 @@ class Batman.Firebase.Storage extends Batman.StorageAdapter
       loadRecords.apply(@model, options, callback)
 
   _listenToList: ->
-    @_listListener ?= @firebaseListRef.on 'child_added', (snapshot) =>
-      record = @model.createFromJSON(snapshot.val())
+    if !@_listeningToList
+      @firebaseListRef.on 'child_added', (snapshot) =>
+        record = @model.createFromJSON(snapshot.val())
+      @firebaseListRef.on 'child_removed', (snapshot) =>
+        record = @model.createFromJSON(snapshot.val())
+        @model.get('loaded').remove(record)
+      @firebaseListRef.on 'child_changed', (snapshot) =>
+        record = @model.createFromJSON(snapshot.val())
+    @_listeningToList = true
 
   @::before 'create', 'update', 'read', 'destroy', 'readAll', 'destroyAll', @skipIfError (env, next) ->
     @firebaseListRef ?= Batman.currentApp.firebase.child(@firebaseClass)

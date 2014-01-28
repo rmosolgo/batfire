@@ -1,0 +1,16 @@
+{
+  "name": "batman-firebase",
+  "version": "0.0.1",
+  "engines": {
+    "node": ">= 0.10"
+  },
+  "devDependencies": {
+    "karma": ">= 0.10",
+    "coffee-script" : ">= 1.6.3",
+    "uglify-js" : ">= 2.4"
+  },
+  "scripts" : {
+    "test" : "./node_modules/.bin/karma start ./spec/unit.coffee --single-run --browsers PhantomJS",
+    "build" : "coffee -o dist/ -c src/batman.firebase.coffee && uglifyjs dist/batman.firebase.js -o dist/batman.firebase.min.js"
+  }
+}
