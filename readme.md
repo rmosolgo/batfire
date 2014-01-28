@@ -1,6 +1,6 @@
 # Batman.Firebase
 
-Batman.Firebase is a [batman.js](http://batmanjs.org/) [`StorageAdapter`](http://batmanjs.org/docs/api/batman.storageadapter.html) for [Firebase](https://www.firebase.com/). It's available in [CoffeeScript](https://github.com/rmosolgo/batman-firebase/tree/master/src/batman.firebase.coffee), [JavaScript](https://github.com/rmosolgo/batman-firebase/tree/master/dist/batman.firebase.js) or [minified JavaScript](https://github.com/rmosolgo/batman-firebase/tree/master/dist/batman.firebase.js).
+Batman.Firebase is a [batman.js](http://batmanjs.org/) [`StorageAdapter`](http://batmanjs.org/docs/api/batman.storageadapter.html) for [Firebase](https://www.firebase.com/). It's available in [CoffeeScript](https://raw.github.com/rmosolgo/batman-firebase/master/src/batman.firebase.coffee), [JavaScript](https://raw.github.com/rmosolgo/batman-firebase/master/dist/batman.firebase.js) or [minified JavaScript](https://raw.github.com/rmosolgo/batman-firebase/master/dist/batman.firebase.min.js).
 
 It ain't done yet, but it works. See `to do` or the specs.
 
@@ -71,6 +71,6 @@ Items added, removed, and changed on Firebase will be propagated to all connecte
 
 - `read` and friends should listen for value events?
 - Allow custom function for generating IDs
-
+- Use StorageAdapter ModelMixin for modifying `clear` and `load`
 
 __License:__ [MIT](http://opensource.org/licenses/MIT)

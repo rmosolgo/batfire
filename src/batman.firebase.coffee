@@ -1,6 +1,4 @@
-
 class Batman.Firebase
-
 class Batman.Firebase.Reference
   constructor: ({@path, @parent}) ->
     if @parent
@@ -20,6 +18,7 @@ class Batman.Firebase.Storage extends Batman.StorageAdapter
     super
     @firebaseClass = Batman.helpers.pluralize(@model.resourceName)
 
+    # Should be rewritten as a model mixin
     clearLoaded = @model.clear
     @model.clear = =>
       result = clearLoaded.apply(@model)
