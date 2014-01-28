@@ -7,7 +7,7 @@ It ain't done yet, but it works. See `to do` or the specs.
 # Usage
 
 
-1. Load the files
+### 1. Load the files
 
   In the asset pipeline:
   
@@ -23,7 +23,7 @@ It ain't done yet, but it works. See `to do` or the specs.
   <script src='/lib/batman.firebase.js'></script>
   ```
 
-2. `YourApp.syncsWithFirebase("your-app")`
+### 2. `YourApp.syncsWithFirebase("your-app")`
 
   For example,
   
@@ -34,7 +34,7 @@ It ain't done yet, but it works. See `to do` or the specs.
   
   will sync with `https://my-firebase-app-name.firebaseio.com`
 
-3. `@persist` your models with `Batman.Firebase.Storage`
+### 3. `@persist` your models with `Batman.Firebase.Storage`
   
   ```
   class App.Sandwich extends Batman.Model
@@ -43,7 +43,7 @@ It ain't done yet, but it works. See `to do` or the specs.
     @encode "id", "meats", "tomato", "lettuce"
   ```
 
-3. Get to work!
+### 3. Get to work!
 
   ```coffeescript
   App.run()
