@@ -5,6 +5,7 @@ module.exports = (config) ->
     files: [
       'spec/batman.firebase/**/*.coffee' # load your tests
       'spec/lib/batman.js'
+      'https://cdn.firebase.com/js/client/1.0.2/firebase.js'
       'src/batman.firebase.coffee'
       'spec/spec_helper.coffee'
     ]

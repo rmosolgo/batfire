@@ -1,10 +1,7 @@
 describe 'create', ->
-  beforeEach -> TestModel.destroyAll()
-  afterEach -> TestModel.destroyAll()
-
   it 'creates new records', ->
     spyOn(Batman.Firebase.Storage.prototype, 'create').andCallThrough()
-    record = newTestRecord()
+    record = newTestRecord(name: "created record")
     @saved = false
     @savedRecord = null
     @error = null
@@ -18,6 +15,8 @@ describe 'create', ->
     waitsFor (=> @saved), "Record should be saved"
 
     runs =>
+      expect(Batman.Firebase.Storage::create).toHaveBeenCalled()
       expect(@error).toBeFalsy()
-      expect(@savedRecord.get('name')).toEqual('new record')
+      expect(@savedRecord.get('name')).toEqual('created record')
+      record.destroy()
 

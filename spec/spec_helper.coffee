@@ -1,7 +1,11 @@
-class window.TestModel extends Batman.Model
+class @TestApp extends Batman.App
+  @syncsWithFirebase 'batman-dev'
+
+
+class TestApp.TestModel extends Batman.Model
   @resourceName: 'test_model'
   @persist Batman.Firebase.Storage
-  @encode 'name'
+  @encode 'name', 'id'
 
   @destroyAll: (callback) ->
     # return @load (err, records) ->
@@ -11,9 +15,10 @@ class window.TestModel extends Batman.Model
         callback?(err, records, env)
 
 
+appIsRunning = false
 window.newTestRecord = (attrs) ->
-  record = new TestModel(name: "new record")
-  # record.set 'file', new Blob(["My file content!"], type: "text/plain")
-  # record.set 'filename', 'test.txt'
+  if !appIsRunning
+    TestApp.run()
+  record = new TestApp.TestModel(name: "new record")
   record.updateAttributes(attrs)
   record

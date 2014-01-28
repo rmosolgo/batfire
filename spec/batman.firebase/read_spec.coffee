@@ -1,4 +1,5 @@
 describe 'read', ->
+  afterEach -> TestApp.TestModel.destroyAll()
   it 'returns saved records', ->
     spyOn(Batman.Firebase.Storage.prototype, 'read').andCallThrough()
     record = newTestRecord()
@@ -9,8 +10,8 @@ describe 'read', ->
     runs =>
       record.save (err, r) =>
         recordId = r.get('id')
-        TestModel.clear()
-        TestModel.find recordId, (err2, record2) =>
+        TestApp.TestModel.clear()
+        TestApp.TestModel.find recordId, (err2, record2) =>
           @error = err2
           @savedRecord = record2
           @saved = true
