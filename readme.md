@@ -1,6 +1,6 @@
 # Batman.Firebase
 
-Batman.Firebase is a [batman.js](http://batmanjs.org/) [`StorageAdapter`](http://batmanjs.org/docs/api/batman.storageadapter.html) for [Firebase](https://www.firebase.com/). It's available in [CoffeeScript](https://raw.github.com/rmosolgo/batman-firebase/master/src/batman.firebase.coffee), [JavaScript](https://raw.github.com/rmosolgo/batman-firebase/master/dist/batman.firebase.js) or [minified JavaScript](https://raw.github.com/rmosolgo/batman-firebase/master/dist/batman.firebase.min.js).
+Batman.Firebase is a [batman.js](http://batmanjs.org/) [`StorageAdapter`](http://batmanjs.org/docs/api/batman.storageadapter.html) for [Firebase](https://www.firebase.com/). It's available in [CoffeeScript](https://raw.github.com/rmosolgo/batman-firebase/master/src/batman.firebase.coffee), [JavaScript](https://raw.github.com/rmosolgo/batman-firebase/master/batman.firebase.js) or [minified JavaScript](https://raw.github.com/rmosolgo/batman-firebase/master/batman.firebase.min.js).
 
 It ain't done yet, but it works. See `to do` or the specs.
 
