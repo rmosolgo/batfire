@@ -2,7 +2,7 @@ describe 'destroy', ->
   afterEach -> TestApp.TestModel.destroyAll()
 
   it 'destroys existing records', ->
-    spyOn(Batman.Firebase.Storage.prototype, 'destroy').andCallThrough()
+    spyOn(BatFire.Storage.prototype, 'destroy').andCallThrough()
     record = newTestRecord(name: "destroy record")
     @destroyed = false
     @error = null
@@ -21,7 +21,7 @@ describe 'destroy', ->
     waitsFor (=> @destroyed), "Record should be destroyed"
 
     runs =>
-      expect(Batman.Firebase.Storage::destroy).toHaveBeenCalled()
+      expect(BatFire.Storage::destroy).toHaveBeenCalled()
       expect(@error.message).toMatch(/Record couldn't be found/)
       expect(TestApp.TestModel.get('loaded.length')).toEqual(0)
 

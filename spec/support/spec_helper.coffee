@@ -4,7 +4,7 @@ class @TestApp extends Batman.App
 
 class TestApp.TestModel extends Batman.Model
   @resourceName: 'test_model'
-  @persist Batman.Firebase.Storage
+  @persist BatFire.Storage
   @encode 'name', 'id'
 
   @destroyAll: (callback) ->
@@ -14,6 +14,8 @@ class TestApp.TestModel extends Batman.Model
     @_doStorageOperation 'destroyAll', options, (err, records, env) =>
         callback?(err, records, env)
 
+@notImplemented = ->
+  console.warn "Not Implemented"
 
 appIsRunning = false
 window.newTestRecord = (attrs) ->

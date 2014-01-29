@@ -2,7 +2,7 @@ describe 'readAll', ->
   afterEach -> TestApp.TestModel.destroyAll()
 
   it 'returns all records', ->
-    spyOn(Batman.Firebase.Storage.prototype, 'readAll').andCallThrough()
+    spyOn(BatFire.Storage.prototype, 'readAll').andCallThrough()
     saved = false
     error = null
     ids = []
@@ -23,6 +23,6 @@ describe 'readAll', ->
     waitsFor (=> TestApp.TestModel.get('loaded.length') == 2), "Record should be saved",5000
 
     runs =>
-      expect(Batman.Firebase.Storage::readAll).toHaveBeenCalled()
+      expect(BatFire.Storage::readAll).toHaveBeenCalled()
       expect(error).toBeFalsy()
       expect(TestApp.TestModel.get('loaded.length')).toEqual(2)

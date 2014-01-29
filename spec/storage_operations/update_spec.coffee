@@ -2,7 +2,7 @@ describe 'update', ->
   afterEach -> TestApp.TestModel.destroyAll()
 
   it 'saves existing records', ->
-    spyOn(Batman.Firebase.Storage.prototype, 'update').andCallThrough()
+    spyOn(BatFire.Storage.prototype, 'update').andCallThrough()
     record = newTestRecord('update record')
     @saved = false
     @savedRecord = null

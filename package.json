@@ -1,5 +1,5 @@
 {
-  "name": "batman-firebase",
+  "name": "BatFire",
   "version": "0.0.1",
   "author" : "Robert Mosolgo",
   "engines": {
@@ -18,7 +18,8 @@
     "uglify-js" : ">= 2.4"
   },
   "scripts" : {
-    "test" : "./node_modules/.bin/karma start ./spec/unit.coffee --single-run --browsers PhantomJS",
-    "build" : "coffee -o ./ -c src/batman.firebase.coffee && uglifyjs batman.firebase.js -o batman.firebase.min.js"
+    "test" : "./node_modules/.bin/karma start ./spec/support/unit.coffee --single-run --browsers PhantomJS",
+    "spec" : "./node_modules/.bin/karma start ./spec/support/unit.coffee",
+    "build" : "coffee -o ./ -c src/batfire.coffee && uglifyjs batfire.js -o batfire.min.js"
   }
 }

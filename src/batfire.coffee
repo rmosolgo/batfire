@@ -1,5 +1,5 @@
-class Batman.Firebase
-class Batman.Firebase.Reference
+class BatFire
+class BatFire.Reference
   constructor: ({@path, @parent}) ->
     if @parent
       @ref = @parent.child(@path)
@@ -11,34 +11,39 @@ class Batman.Firebase.Reference
 
 Batman.App.syncsWithFirebase = (@firebaseAppName) ->
   @firebaseURL = "https://#{@firebaseAppName}.firebaseio.com/"
-  @firebase = new Batman.Firebase.Reference(path: @firebaseURL)
+  @firebase = new BatFire.Reference(path: @firebaseURL)
 
-class Batman.Firebase.Storage extends Batman.StorageAdapter
+class BatFire.Storage extends Batman.StorageAdapter
   constructor: ->
     super
     @firebaseClass = Batman.helpers.pluralize(@model.resourceName)
+    #### Should be rewritten as a model mixin
+    ####
+    @model.encode(@model.primaryKey)
 
-    # Should be rewritten as a model mixin
     clearLoaded = @model.clear
     @model.clear = =>
       result = clearLoaded.apply(@model)
       @_listeningToList = false
-      delete @firebaseListRef
+      delete @model._firebaseListRef
       result
 
     loadRecords = @model.load
     @model.load = (options, callback) =>
       Batman.developer.warn("Firebase doesn't return all records at once!")
       loadRecords.apply(@model, options, callback)
+    ####
+    ####
 
   _listenToList: ->
     if !@_listeningToList
-      @firebaseListRef.on 'child_added', (snapshot) =>
+      @model._firebaseListRef ?= Batman.currentApp.firebase.child(@firebaseClass)
+      @model._firebaseListRef.on 'child_added', (snapshot) =>
         record = @model.createFromJSON(snapshot.val())
-      @firebaseListRef.on 'child_removed', (snapshot) =>
+      @model._firebaseListRef.on 'child_removed', (snapshot) =>
         record = @model.createFromJSON(snapshot.val())
         @model.get('loaded').remove(record)
-      @firebaseListRef.on 'child_changed', (snapshot) =>
+      @model._firebaseListRef.on 'child_changed', (snapshot) =>
         record = @model.createFromJSON(snapshot.val())
     @_listeningToList = true
 
@@ -57,12 +62,12 @@ class Batman.Firebase.Storage extends Batman.StorageAdapter
     next()
 
   @::after 'readAll', @skipIfError (env, next) ->
-    env.result = [] #@getRecordsFromData(env.recordsAttributes, env.subject)
+    env.result = []
     next()
 
   create: @skipIfError (env, next) ->
-    id = env.firebaseRef.name()
-    env.subject._withoutDirtyTracking -> @set('id', id)
+    firebaseId = env.firebaseRef.name()
+    env.subject._withoutDirtyTracking -> @set(env.subject.constructor.primaryKey, firebaseId)
     env.firebaseRef.set env.subject.toJSON(), (err) ->
       if err
         env.error = err

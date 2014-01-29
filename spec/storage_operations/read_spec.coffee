@@ -1,7 +1,7 @@
 describe 'read', ->
   afterEach -> TestApp.TestModel.destroyAll()
-  it 'returns saved records', ->
-    spyOn(Batman.Firebase.Storage.prototype, 'read').andCallThrough()
+  it 'returns saved record', ->
+    spyOn(BatFire.Storage.prototype, 'read').andCallThrough()
     record = newTestRecord()
     @saved = false
     @savedRecord = null

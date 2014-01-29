@@ -1,13 +1,13 @@
 module.exports = (config) ->
   config.set
-    basePath: '../'
-    frameworks: ['jasmine'] # that's my weapon of choice, anyways.
+    basePath: '../../'
+    frameworks: ['jasmine']
     files: [
-      'spec/batman.firebase/**/*.coffee' # load your tests
+      'spec/**/*_spec.coffee'
       'spec/lib/batman.js'
       'https://cdn.firebase.com/js/client/1.0.2/firebase.js'
-      'src/batman.firebase.coffee'
-      'spec/spec_helper.coffee'
+      'src/batfire.coffee'
+      'spec/support/spec_helper.coffee'
     ]
     reporters: ['dots']
     port: 9876
