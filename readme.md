@@ -6,9 +6,7 @@ It ain't done yet, but it works. See `to do` or the specs.
 
 # Usage
 
-
-### 1. Load the files
-
+1. __Load the files:__
   In the asset pipeline:
 
   ```coffeescript
@@ -22,51 +20,54 @@ It ain't done yet, but it works. See `to do` or the specs.
   <script src='/lib/batman.js'></script>
   <script src='/lib/batfire.js'></script>
   ```
-
-### 2. `YourApp.syncsWithFirebase("your-app")`
+2. __YourApp `@syncsWithFirebase("your-app")`__
 
   For example,
 
   ```coffeescript
   class App extends Batman.App
     @syncsWithFirebase "my-firebase-app-name"
+
+  # Make sure you call App.run() -- that's when it really connects!
   ```
 
   will sync with `https://my-firebase-app-name.firebaseio.com`
 
-### 3. `@persist` your models with `BatFire.Storage`
+## BatFire.Storage
 
-  ```
-  class App.Sandwich extends Batman.Model
-    @resourceName: 'sandwich'
-    @persist BatFire.Storage
-    @encode "meats", "tomato", "lettuce" # @primaryKey will be encoded automatically
-  ```
+`Batfire.Storage` implements the StorageAdapter interface, so you can pass it to `@persist` in your model definition. For example:
 
-### 4. Get to work!
+```coffeescript
+class App.Sandwich extends Batman.Model
+  @resourceName: 'sandwich'
+  @persist BatFire.Storage
+  @encode "meats", "tomato", "lettuce" # @primaryKey will be encoded automatically
+```
 
-  ```coffeescript
-  App.run() # make sure you call run!
+Now, all the storage operations of your records will trigger updates on Firebase:
 
-  blt = new App.Sandwich(meats: ["Bacon"], lettuce: true, tomato: true)
-  blt.save()
-  blt.get('id') # => "-JELsmNtuZ4FX6D5f_Ou" and the like
-  blt.destroy()
+```coffeescript
+blt = new App.Sandwich(meats: ["bacon"], lettuce: true, tomato: true)
+blt.save()    # => BLT will appear for all client!
+blt.get('id') # => "-JELsmNtuZ4FX6D5f_Ou" and the like
+blt.destroy() # => BLT will be gone from all clients!
 
-  App.Sandwich.find "-JELsxaWRqaDlDZJHw3y", (err, record) ->
-    record.get('name') # => 'Reuben'
-
-  App.Sandwich.get('all') # => starts listening for new sandwiches on Firebase, adds them to `Sandwich.loaded`
-  App.Sandwich.clear() # => clears the loaded set, stops listening for new sandwiches
-  ```
+App.Sandwich.find "-JELsxaWRqaDlDZJHw3y", (err, record) ->
+  record.get('name') # => 'Reuben'
+```
 
 Items added, removed, and changed on Firebase will be propagated to all connected `loaded` sets.
+```coffeescript
+App.Sandwich.get('all') # => starts listening for new sandwiches on Firebase, adds them to `Sandwich.loaded`
+App.Sandwich.clear() # => clears the loaded set, stops listening for new sandwiches
+```
 
-# Notes
+__Notes about `BatFire.Storage`:__
 
 - `BatFire.Storage` will automatically set your model to `@encode` its `primaryKey`
 - You can listen to _all_ records by calling `Model.load()`. This sets up handlers for `child_added`, `child_removed`, and `child_changed`. Calling `Model.clear()` empties the loaded set and stops listening.
 - `Model.load` doesn't return all records! Firebase just doesn't work like that. It does set up a Firebase listener to populate the `loaded` set, though.
+
 
 # To do
 
