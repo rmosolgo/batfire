@@ -1,12 +1,13 @@
 # BatFire
 
-BatFire is a [batman.js](http://batmanjs.org/) [`StorageAdapter`](http://batmanjs.org/docs/api/batman.storageadapter.html) for [Firebase](https://www.firebase.com/). It's available in [CoffeeScript](https://raw.github.com/rmosolgo/batman-firebase/master/src/batman.firebase.coffee), [JavaScript](https://raw.github.com/rmosolgo/batman-firebase/master/batman.firebase.js) or [minified JavaScript](https://raw.github.com/rmosolgo/batman-firebase/master/batman.firebase.min.js).
+BatFire is a [Firebase](https://www.firebase.com/) client library for [batman.js](http://batmanjs.org/). It's available in [CoffeeScript](https://raw.github.com/rmosolgo/batfire/master/src/batfire.coffee), [JavaScript](https://raw.github.com/rmosolgo/batfire/master/batfire.js) or [minified JavaScript](https://raw.github.com/rmosolgo/batfire/master/batfire.min.js).
 
-It ain't done yet, but it works. See `to do` or the specs.
+It ain't done yet, but everything described here works. See `to do` or the specs.
 
 # Usage
 
 1. __Load the files:__
+
   In the asset pipeline:
 
   ```coffeescript
@@ -26,16 +27,14 @@ It ain't done yet, but it works. See `to do` or the specs.
 
   ```coffeescript
   class App extends Batman.App
-    @syncsWithFirebase "my-firebase-app-name"
-
-  # Make sure you call App.run() -- that's when it really connects!
+    @syncsWithFirebase "my-firebase-app-name" # Make sure you call App.run() -- that's when it really connects!
   ```
 
   will sync with `https://my-firebase-app-name.firebaseio.com`
 
 ## BatFire.Storage
 
-`Batfire.Storage` implements the StorageAdapter interface, so you can pass it to `@persist` in your model definition. For example:
+`Batfire.Storage` implements the [`Batman.StorageAdapter`](http://batmanjs.org/docs/api/batman.storageadapter.html) interface, so you can pass it to `@persist` in your model definition. For example:
 
 ```coffeescript
 class App.Sandwich extends Batman.Model
@@ -48,7 +47,7 @@ Now, all the storage operations of your records will trigger updates on Firebase
 
 ```coffeescript
 blt = new App.Sandwich(meats: ["bacon"], lettuce: true, tomato: true)
-blt.save()    # => BLT will appear for all client!
+blt.save()    # => BLT will appear for all clients!
 blt.get('id') # => "-JELsmNtuZ4FX6D5f_Ou" and the like
 blt.destroy() # => BLT will be gone from all clients!
 
@@ -57,6 +56,7 @@ App.Sandwich.find "-JELsxaWRqaDlDZJHw3y", (err, record) ->
 ```
 
 Items added, removed, and changed on Firebase will be propagated to all connected `loaded` sets.
+
 ```coffeescript
 App.Sandwich.get('all') # => starts listening for new sandwiches on Firebase, adds them to `Sandwich.loaded`
 App.Sandwich.clear() # => clears the loaded set, stops listening for new sandwiches
