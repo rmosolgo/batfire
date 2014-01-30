@@ -9,31 +9,66 @@ class BatFire.Reference
   child: (path) ->
     @ref.child(path)
 
-Batman.App.syncsWithFirebase = (@firebaseAppName) ->
-  @firebaseURL = "https://#{@firebaseAppName}.firebaseio.com/"
-  @firebase = new BatFire.Reference(path: @firebaseURL)
+BatFire.AppMixin =
+  initialize: ->
+    @syncsWithFirebase = (@firebaseAppName) ->
+      @firebaseURL = "https://#{@firebaseAppName}.firebaseio.com/"
+      @firebase = new BatFire.Reference(path: @firebaseURL)
+
+    @syncs = (keypathString, {as}={}) ->
+      @_syncKeypaths ?= []
+      @_syncKeypaths.push(keypathString)
+      firebasePath = keypathString.replace(/\./, '/')
+      childRef = @firebase.child("BatFire/#{firebasePath}")
+      syncConstructor = as
+      @observe keypathString, (newValue, oldValue) =>
+        return if newValue is oldValue or Batman.typeOf(newValue) is 'Undefined'
+        newValue = newValue.toJSON() if newValue?.toJSON
+        childRef.set(newValue)
+      childRef.on 'value', (snapshot) =>
+        value = snapshot.val()
+        if syncConstructor?
+          value = new syncConstructor(value)
+        @set(keypathString, value)
+
+    @_updateFirebaseChild = (keypathString, newValue) ->
+      firebasePath = keypathString.replace(/\./, '/')
+      childRef = @firebase.child("BatFire/#{firebasePath}")
+      newValue = newValue.toJSON() if newValue?.toJSON
+      childRef.set(newValue)
+
+    appSet = @set
+    @set = ->
+      keypathString = arguments[0]
+      value = arguments[1]
+      firstKeypathPart = keypathString.split(".")[0]
+      if firstKeypathPart in(@_syncKeypaths || [])
+        @_updateFirebaseChild(keypathString, value)
+      appSet.apply(@, arguments)
+
+Batman.App.classMixin(BatFire.AppMixin)
 
 class BatFire.Storage extends Batman.StorageAdapter
+  @ModelMixin =
+    initialize: ->
+      @encode(@model.primaryKey)
+
+      _BatFireClearLoaded = @clear
+      @clear = =>
+        result = _BatFireClearLoaded.apply(@model)
+        @storageAdapter()._listeningToList = false
+        delete @_firebaseListRef
+        result
+
+      _BatFireLoadRecords = @load
+      @load = (options, callback) =>
+        Batman.developer.warn("Firebase doesn't return all records at once!")
+        _BatFireLoadRecords.apply(@model, options, callback)
+
   constructor: ->
     super
     @firebaseClass = Batman.helpers.pluralize(@model.resourceName)
-    #### Should be rewritten as a model mixin
-    ####
-    @model.encode(@model.primaryKey)
-
-    clearLoaded = @model.clear
-    @model.clear = =>
-      result = clearLoaded.apply(@model)
-      @_listeningToList = false
-      delete @model._firebaseListRef
-      result
-
-    loadRecords = @model.load
-    @model.load = (options, callback) =>
-      Batman.developer.warn("Firebase doesn't return all records at once!")
-      loadRecords.apply(@model, options, callback)
-    ####
-    ####
+    @model.classMixin(@ModelMixin)
 
   _listenToList: ->
     if !@_listeningToList

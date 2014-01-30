@@ -1,6 +1,9 @@
 class @TestApp extends Batman.App
   @syncsWithFirebase 'batman-dev'
 
+  @syncs 'someInteger'
+  @syncs 'someObject'
+  @syncs 'someBatmanObject', as: Batman.Object
 
 class TestApp.TestModel extends Batman.Model
   @resourceName: 'test_model'
@@ -21,6 +24,7 @@ appIsRunning = false
 window.newTestRecord = (attrs) ->
   if !appIsRunning
     TestApp.run()
+    appIsRunning = true
   record = new TestApp.TestModel(name: "new record")
   record.updateAttributes(attrs)
   record

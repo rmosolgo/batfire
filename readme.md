@@ -1,6 +1,10 @@
 # BatFire
 
-BatFire is a [Firebase](https://www.firebase.com/) client library for [batman.js](http://batmanjs.org/). It's available in [CoffeeScript](https://raw.github.com/rmosolgo/batfire/master/src/batfire.coffee), [JavaScript](https://raw.github.com/rmosolgo/batfire/master/batfire.js) or [minified JavaScript](https://raw.github.com/rmosolgo/batfire/master/batfire.min.js).
+BatFire is a [Firebase](https://www.firebase.com/) client library for [batman.js](http://batmanjs.org/). It's available in [CoffeeScript](https://raw.github.com/rmosolgo/batfire/master/src/batfire.coffee), [JavaScript](https://raw.github.com/rmosolgo/batfire/master/batfire.js) or [minified JavaScript](https://raw.github.com/rmosolgo/batfire/master/batfire.min.js). BatFire offers:
+
+- A storage adapter, [`BatFire.Storage`](#batfirestorage), for saving your records and updating clients in real time
+- App-wide, real-time-syncing accessors with [`@syncs`](#appsyncs)
+
 
 It ain't done yet, but everything described here works. See `to do` or the specs.
 
@@ -68,13 +72,38 @@ __Notes about `BatFire.Storage`:__
 - You can listen to _all_ records by calling `Model.load()`. This sets up handlers for `child_added`, `child_removed`, and `child_changed`. Calling `Model.clear()` empties the loaded set and stops listening.
 - `Model.load` doesn't return all records! Firebase just doesn't work like that. It does set up a Firebase listener to populate the `loaded` set, though.
 
+## App.syncs
+
+`App.syncs` binds keypaths on your app to Firebase so that if they're updated on client, the updates are pushed to the others. To create a syncing accessor on your app, just call `@syncs` and use it like a normal accessor:
+
+```coffeescript
+class App extends Batman.App
+         # key...            # optional: constructor when loading from Firebase
+  @syncs 'sandwichOfTheDay', as: Batman.Object
+App.run()
+
+mySandwich = new Batman.Object({name: "French Dip", price: "$7.50"})
+App.set('sandwichOfTheDay', mySandwich)
+App.set('sandwichOfTheDay.price', "$6.50")
+# elsewhere...
+App.get('sandwichOfTheDay') # => <Batman.Object, "French Dip">
+App.get('sandwichOfTheDay.price') # => "$6.50"
+```
+
+This comes with some __caveats__:
+
+- If you don't __secure__ the paths on Firebase, a malevolent user could update these properties via the console and screw everything up!
+- Whatever you're syncing will be sent `toJSON` if it has a `toJSON` method, otherwise it will be sent to Firebase as-is.
+- You may specify a constructor function with `as:`. Objects will be sent to Firebase, and when new values come in, the value will be passed to that constructor.
+- This doesn't work: `App.get('sandwichOfTheDay').set('price')`. Sorry! Do it all at once: `App.set('sandwichOfTheDay.price', "$6.25")`.
+
 
 # To do
 
 - Allow custom function for generating IDs
-- Use StorageAdapter ModelMixin for modifying `clear`, `load`, encoding Primary Key
 - add `Model.encodesTimestamps` for updatedAt and createdAt and implement it on the storage adapter
 - spec model additions
+- Wrap Firebase Authorization
 
 # Development
 
