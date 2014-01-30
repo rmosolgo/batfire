@@ -1,6 +1,6 @@
 # BatFire
 
-BatFire is a [Firebase](https://www.firebase.com/) client library for [batman.js](http://batmanjs.org/). It's available in [CoffeeScript](https://raw.github.com/rmosolgo/batfire/master/src/batfire.coffee), [JavaScript](https://raw.github.com/rmosolgo/batfire/master/batfire.js) or [minified JavaScript](https://raw.github.com/rmosolgo/batfire/master/batfire.min.js). BatFire offers:
+BatFire is a [Firebase](https://www.firebase.com/) client library for [batman.js](http://batmanjs.org/). It's available in [CoffeeScript](https://raw.github.com/rmosolgo/batfire/master/batfire.coffee), [JavaScript](https://raw.github.com/rmosolgo/batfire/master/batfire.js), and [minified JavaScript](https://raw.github.com/rmosolgo/batfire/master/batfire.min.js). BatFire offers:
 
 - A storage adapter, [`BatFire.Storage`](#batfirestorage), for saving your records and updating clients in real time
 - App-wide, real-time-syncing accessors with [`@syncs`](#appsyncs)

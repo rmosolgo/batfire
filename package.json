@@ -20,6 +20,6 @@
   "scripts" : {
     "test" : "./node_modules/.bin/karma start ./spec/support/unit.coffee --single-run --browsers PhantomJS",
     "spec" : "./node_modules/.bin/karma start ./spec/support/unit.coffee",
-    "build" : "coffee -o ./ -c src/batfire.coffee && uglifyjs batfire.js -o batfire.min.js"
+    "build" : "cat src/* > batfire.coffee && coffee -o ./ -c batfire.coffee && uglifyjs batfire.js -o batfire.min.js"
   }
 }
