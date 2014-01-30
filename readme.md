@@ -10,22 +10,31 @@ It ain't done yet, but everything described here works. See `to do` or the specs
 
 # Usage
 
-1. __Load the files:__
+1. __Get the files:__
 
-  In the asset pipeline:
+  Download BatFire in a form of your choice:
+
+  - [CoffeeScript](https://raw.github.com/rmosolgo/batfire/master/batfire.coffee)
+  - [JavaScript](https://raw.github.com/rmosolgo/batfire/master/batfire.js)
+  - [Minified JavaScript](https://raw.github.com/rmosolgo/batfire/master/batfire.min.js)
+
+2. __Load the files:__
+
+  Be sure to include BatFire _after_ you include batman.js. For example, in the asset pipeline:
 
   ```coffeescript
   #= require batman
   #= require batfire
   ```
 
-  Or in your HTML:
+  or in your HTML:
 
   ```html
   <script src='/lib/batman.js'></script>
   <script src='/lib/batfire.js'></script>
   ```
-2. __YourApp `@syncsWithFirebase("your-app")`__
+
+3. __YourApp `@syncsWithFirebase("your-app")`__
 
   For example,
 
@@ -34,7 +43,11 @@ It ain't done yet, but everything described here works. See `to do` or the specs
     @syncsWithFirebase "my-firebase-app-name" # Make sure you call App.run() -- that's when it really connects!
   ```
 
-  will sync with `https://my-firebase-app-name.firebaseio.com`
+  will sync with `https://my-firebase-app-name.firebaseio.com`. After `App.run`, your "raw" Firebase reference is also available to you:
+
+  ```coffeescript
+  App.get('firebase.ref') # => your Firebase reference
+  ```
 
 ## BatFire.Storage
 
@@ -90,9 +103,9 @@ App.get('sandwichOfTheDay') # => <Batman.Object, "French Dip">
 App.get('sandwichOfTheDay.price') # => "$6.50"
 ```
 
-This comes with some __caveats__:
+__This comes with some caveats__:
 
-- If you don't __secure__ the paths on Firebase, a malevolent user could update these properties via the console and screw everything up!
+- If you don't [__secure__ the paths on Firebase](https://www.firebase.com/docs/security/security-rules.html), a malevolent user could update these properties via the console and screw everything up!
 - Whatever you're syncing will be sent `toJSON` if it has a `toJSON` method, otherwise it will be sent to Firebase as-is.
 - You may specify a constructor function with `as:`. Objects will be sent to Firebase, and when new values come in, the value will be passed to that constructor.
 - This doesn't work: `App.get('sandwichOfTheDay').set('price')`. Sorry! Do it all at once: `App.set('sandwichOfTheDay.price', "$6.25")`.

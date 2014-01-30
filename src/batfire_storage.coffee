@@ -2,11 +2,11 @@
 class BatFire.Storage extends Batman.StorageAdapter
   @ModelMixin =
     initialize: ->
-      @encode(@model.primaryKey)
+      @encode(@primaryKey)
 
       _BatFireClearLoaded = @clear
       @clear = =>
-        result = _BatFireClearLoaded.apply(@model)
+        result = _BatFireClearLoaded.apply(@)
         @storageAdapter()._listeningToList = false
         delete @_firebaseListRef
         result
@@ -14,7 +14,7 @@ class BatFire.Storage extends Batman.StorageAdapter
       _BatFireLoadRecords = @load
       @load = (options, callback) =>
         Batman.developer.warn("Firebase doesn't return all records at once!")
-        _BatFireLoadRecords.apply(@model, options, callback)
+        _BatFireLoadRecords.apply(@ options, callback)
 
   constructor: ->
     super
@@ -23,7 +23,7 @@ class BatFire.Storage extends Batman.StorageAdapter
 
   _listenToList: ->
     if !@_listeningToList
-      @model._firebaseListRef ?= Batman.currentApp.firebase.child(@firebaseClass)
+      @model._firebaseListRef ?= Batman.currentApp.get('firebase').child(@firebaseClass)
       @model._firebaseListRef.on 'child_added', (snapshot) =>
         record = @model.createFromJSON(snapshot.val())
       @model._firebaseListRef.on 'child_removed', (snapshot) =>
@@ -34,7 +34,7 @@ class BatFire.Storage extends Batman.StorageAdapter
     @_listeningToList = true
 
   @::before 'create', 'update', 'read', 'destroy', 'readAll', 'destroyAll', @skipIfError (env, next) ->
-    @firebaseListRef ?= Batman.currentApp.firebase.child(@firebaseClass)
+    @firebaseListRef ?= Batman.currentApp.get('firebase').child(@firebaseClass)
     if env.subject.get('id')
       env.firebaseRef = @firebaseListRef.child(env.subject.get('id'))
     else if env.action is 'readAll' or env.action is 'destroyAll'
