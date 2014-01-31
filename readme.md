@@ -136,11 +136,16 @@ This adds to `App`:
 - `App.logout()` logs out the current user.
 - `App.get('auth')` is the underlying Firebase auth object.
 
-Since these are on App, you can even use them in bindings:
+Since these are on App, you can use them in bindings:
 
 ```html
-<button data-event-click='login | withArguments "github"'>Log in</button>
-<button data-event-click='logout'>Log out</button>
+<div data-showif='loggedOut'>
+  <button data-event-click='login | withArguments "github"'>Log in</button>
+</div>
+<div data-showif='loggedIn'>
+  <span data-bind='currentUser.username | prepend "Welcome, " | append "!"'></span>
+  <button data-event-click='logout'>Log out</button>
+</div>
 ```
 
 ## Default Provider
