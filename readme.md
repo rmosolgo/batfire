@@ -4,13 +4,13 @@ BatFire is a [Firebase](https://www.firebase.com/) client library for [batman.js
 
 - A storage adapter, [`BatFire.Storage`](#batfirestorage), for saving your records and updating clients in real time
 - App-wide, real-time-syncing accessors with [`@syncs`](#appsyncs)
-- A simple, helpful wrapper around Firebase authentication
+- A simple, helpful [wrapper around Firebase authentication](#appauthorizeswithfirebase)
 
 It ain't done yet, but everything described here works. See `to do` or the specs.
 
 # Usage
 
-1. __Get the files:__
+- __Get the files:__
 
   Download BatFire in a form of your choice:
 
@@ -18,7 +18,7 @@ It ain't done yet, but everything described here works. See `to do` or the specs
   - [JavaScript](https://raw.github.com/rmosolgo/batfire/master/batfire.js)
   - [Minified JavaScript](https://raw.github.com/rmosolgo/batfire/master/batfire.min.js)
 
-2. __Load the files:__
+- __Load the files:__
 
   Be sure to include BatFire _after_ you include batman.js. For example, in the asset pipeline:
 
@@ -34,24 +34,25 @@ It ain't done yet, but everything described here works. See `to do` or the specs
   <script src='/lib/batfire.js'></script>
   ```
 
-3. __YourApp `@syncsWithFirebase("your-app")`__
+- __YourApp `@syncsWithFirebase("your-app")`__
 
   For example,
 
   ```coffeescript
   class App extends Batman.App
-    @syncsWithFirebase "my-firebase-app-name" # Make sure you call App.run() -- that's when it really connects!
+    @syncsWithFirebase "my-firebase-app-name"
   ```
 
-  will sync with `https://my-firebase-app-name.firebaseio.com`. After `App.run`, your "raw" Firebase reference is also available to you:
+  will sync with `https://my-firebase-app-name.firebaseio.com`. Your "raw" Firebase reference is also available to you:
 
   ```coffeescript
+  App.run()
   App.get('firebase.ref') # => your Firebase reference
   ```
 
 ## BatFire.Storage
 
-`Batfire.Storage` implements the [`Batman.StorageAdapter`](http://batmanjs.org/docs/api/batman.storageadapter.html) interface, so you can pass it to `@persist` in your model definition. For example:
+`BatFire.Storage` implements the [`Batman.StorageAdapter`](http://batmanjs.org/docs/api/batman.storageadapter.html) interface, so you can pass it to `@persist` in your model definition. For example:
 
 ```coffeescript
 class App.Sandwich extends Batman.Model
@@ -113,13 +114,12 @@ __This comes with some caveats__:
 
 ## App.authorizesWithFirebase
 
-BatFire provides a lightweight wrapper around [FirebaseSimpleLogin](https://www.firebase.com/docs/security/simple-login-overview.html). If you want to use it, make sure to include the Firebase login client:
+BatFire provides a lightweight wrapper around [FirebaseSimpleLogin](https://www.firebase.com/docs/security/simple-login-overview.html). If you want to use it, make sure to
 
-```html
-<script src='https://cdn.firebase.com/js/simple-login/1.2.3/firebase-simple-login.js'></script>
-```
+- include the Firebase login client (see [FirebaseSimpleLogin overview](https://www.firebase.com/docs/security/simple-login-overview.html))
+- register your app with whatever providers you're using (eg, [github](https://www.firebase.com/docs/security/simple-login-github.html))
 
-Promise me that you won't depend on client-side authentication to protect your data. Use [Firebase security rules](https://www.firebase.com/docs/security/security-rules.html)! Now, in your App definition:
+Promise me that you won't depend on client-side authentication to protect your data. Use __[Firebase security rules](https://www.firebase.com/docs/security/security-rules.html)__! Now, in your App definition:
 
 ```coffeescript
 class App extends Batman.App
@@ -131,11 +131,12 @@ This adds to `App`:
 
 - `App.login(providerString)` initiates the login process with that provider (eg, `'github'`).
 - `App.get('currentUser')` is where all the user information will be. It's a `Batman.Object`, so it's observable.
-- `App.get('loggedIn')` and `App.get('loggedOut')` are based on `App.currentUser`.
+- `App.get('loggedIn')` and
+- `App.get('loggedOut')` say whether `App.currentUser` is present.
 - `App.logout()` logs out the current user.
 - `App.get('auth')` is the underlying Firebase auth object.
 
-Since these are on app, you can even use them in bindings:
+Since these are on App, you can even use them in bindings:
 
 ```html
 <button data-event-click='login | withArguments "github"'>Log in</button>
@@ -156,12 +157,12 @@ App.run()
 App.login() # will use 'facebook'
 ```
 
-
 # To do
 
 - Allow custom function for generating IDs
 - add `Model.encodesTimestamps` for updatedAt and createdAt and implement it on the storage adapter
 - add `Model.belongsToCurrentUser({scoped, protected})`
+- shorthand `App.syncsWithFirebase(key, {authorizes: authArguments})`
 
 # Development
 
