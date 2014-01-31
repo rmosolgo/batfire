@@ -18,3 +18,13 @@ describe 'currentUser', ->
     email = TestApp.get('currentUser.email')
     expect(emailSpy).toHaveBeenCalledWith(email)
 
+describe 'loggedIn/loggedOut', ->
+  it 'watches for currentUser', ->
+    expect(TestApp.get('loggedIn')).toBe(false)
+    expect(TestApp.get('loggedOut')).toBe(true)
+    TestApp.set('currentUser.uid', 'blah blah blah')
+    expect(TestApp.get('loggedIn')).toBe(true)
+    expect(TestApp.get('loggedOut')).toBe(false)
+    TestApp.unset('currentUser')
+    expect(TestApp.get('loggedIn')).toBe(false)
+    expect(TestApp.get('loggedOut')).toBe(true)

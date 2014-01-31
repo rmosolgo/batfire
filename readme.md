@@ -111,12 +111,53 @@ __This comes with some caveats__:
 - This doesn't work: `App.get('sandwichOfTheDay').set('price')`. Sorry! Do it all at once: `App.set('sandwichOfTheDay.price', "$6.25")`.
 
 
+## App.authorizesWithFirebase
+
+BatFire provides a lightweight wrapper around [FirebaseSimpleLogin](https://www.firebase.com/docs/security/simple-login-overview.html). If you want to use it, make sure to include the Firebase login client:
+
+```html
+<script src='https://cdn.firebase.com/js/simple-login/1.2.3/firebase-simple-login.js'></script>
+```
+
+Now, in your App definition:
+
+```coffeescript
+class App extends Batman.App
+  @syncsWithFirebase('my-app-name')
+  @authorizesWithFirebase()
+```
+
+This adds to `App`:
+
+- `App.login(providerString)` initiates the login process with that provider (eg, `'github'`).
+- `App.get('currentUser')` is where all the user information will be. It's a `Batman.Object`, so it's observable.
+- `App.get('loggedIn')` and `App.get('loggedOut')` are based on `App.currentUser`.
+- `App.logout()` logs out the current user.
+
+Since these are on app, you can even use them in bindings:
+
+```html
+<button data-event-click='login | withArguments "github"'>Log in</button>
+<button data-event-click='logout'>Log out</button>
+```
+
+Also, if you pass a provider string to `authorizesWithFirebase`, it will be used by `App.login`:
+
+```coffeescript
+class App extends Batman.App
+  # ...
+  @authorizesWithFirebase('facebook')
+
+App.run()
+
+App.login() # will use 'facebook'
+```
+
+
 # To do
 
 - Allow custom function for generating IDs
 - add `Model.encodesTimestamps` for updatedAt and createdAt and implement it on the storage adapter
-- spec model additions
-- Wrap Firebase Authorization
 
 # Development
 
