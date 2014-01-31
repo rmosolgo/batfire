@@ -148,9 +148,20 @@ Since these are on App, you can use them in bindings:
 </div>
 ```
 
+## Provider Whitelist
+```coffeescript
+class App extends Batman.App
+  @authorizesWithFirebase('github', 'twitter')
+```
+
+If you pass strings to `authorizesWithFirebase`:
+
+- they will be available at `App.get('providers')`
+- `App.login` will throw an error if the passed string isn't on the list
+
 ## Default Provider
 
-If you pass a provider string to `authorizesWithFirebase`, it will be used by `App.login`:
+If you pass one provider string to `authorizesWithFirebase`, it will be used by `App.login`:
 
 ```coffeescript
 class App extends Batman.App
