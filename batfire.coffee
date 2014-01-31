@@ -142,19 +142,23 @@ class BatFire.User extends Batman.Object
 BatFire.AppUserMixin =
   initialize: ->
     @authorizesWithFirebase = (@defaultProviderString=null) ->
+      @set 'currentUser', new BatFire.User
       @on 'run', =>
-        @auth = new FirebaseSimpleLogin @get('firebase.ref'), (err, user) =>
+        @set 'auth', new FirebaseSimpleLogin @get('firebase.ref'), (err, user) =>
           if err?
             throw err
           else
-            batFireUser = new BatFire.User(user)
-            @set('currentUser', batFireUser)
+            @_updateCurrentUser(user)
+
+    @_updateCurrentUser = (attrs) ->
+      @get('currentUser').mixin(attrs)
 
     @login = (provider=null, options={}) ->
       provider ?= @defaultProviderString
-      @auth.login(provider, options)
+      @get('auth').login(provider, options)
 
     @logout = ->
-      @auth.logout()
+      @get('auth').logout()
+      @_updateCurrentUser({})
 
 Batman.App.classMixin(BatFire.AppUserMixin)

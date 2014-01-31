@@ -253,17 +253,19 @@
       this.authorizesWithFirebase = function(defaultProviderString) {
         var _this = this;
         this.defaultProviderString = defaultProviderString != null ? defaultProviderString : null;
+        this.set('currentUser', new BatFire.User);
         return this.on('run', function() {
-          return _this.auth = new FirebaseSimpleLogin(_this.get('firebase.ref'), function(err, user) {
-            var batFireUser;
+          return _this.set('auth', new FirebaseSimpleLogin(_this.get('firebase.ref'), function(err, user) {
             if (err != null) {
               throw err;
             } else {
-              batFireUser = new BatFire.User(user);
-              return _this.set('currentUser', batFireUser);
+              return _this._updateCurrentUser(user);
             }
-          });
+          }));
         });
+      };
+      this._updateCurrentUser = function(attrs) {
+        return this.get('currentUser').mixin(attrs);
       };
       this.login = function(provider, options) {
         if (provider == null) {
@@ -275,10 +277,11 @@
         if (provider == null) {
           provider = this.defaultProviderString;
         }
-        return this.auth.login(provider, options);
+        return this.get('auth').login(provider, options);
       };
       return this.logout = function() {
-        return this.auth.logout();
+        this.get('auth').logout();
+        return this._updateCurrentUser({});
       };
     }
   };
