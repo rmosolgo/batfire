@@ -50,7 +50,7 @@ It ain't done yet, but everything described here works. See `to do` or the specs
   App.get('firebase.ref') # => your Firebase reference
   ```
 
-## BatFire.Storage
+# BatFire.Storage
 
 `BatFire.Storage` implements the [`Batman.StorageAdapter`](http://batmanjs.org/docs/api/batman.storageadapter.html) interface, so you can pass it to `@persist` in your model definition. For example:
 
@@ -86,7 +86,7 @@ __Notes about `BatFire.Storage`:__
 - You can listen to _all_ records by calling `Model.load()`. This sets up handlers for `child_added`, `child_removed`, and `child_changed`. Calling `Model.clear()` empties the loaded set and stops listening.
 - `Model.load` doesn't return all records! Firebase just doesn't work like that. It does set up a Firebase listener to populate the `loaded` set, though.
 
-## App.syncs
+# App.syncs
 
 `App.syncs` binds keypaths on your app to Firebase so that if they're updated on client, the updates are pushed to the others. To create a syncing accessor on your app, just call `@syncs` and use it like a normal accessor:
 
@@ -112,7 +112,7 @@ __This comes with some caveats__:
 - This doesn't work: `App.get('sandwichOfTheDay').set('price')`. Sorry! Do it all at once: `App.set('sandwichOfTheDay.price', "$6.25")`.
 
 
-## App.authorizesWithFirebase
+# App.authorizesWithFirebase
 
 BatFire provides a lightweight wrapper around [FirebaseSimpleLogin](https://www.firebase.com/docs/security/simple-login-overview.html). If you want to use it, make sure to
 

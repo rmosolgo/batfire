@@ -153,12 +153,15 @@ BatFire.AppUserMixin =
     @_updateCurrentUser = (attrs) ->
       @get('currentUser').mixin(attrs)
 
-    @login = (provider=null, options={}) ->
+    @login = (provider, options={}) ->
       provider ?= @defaultProviderString
       @get('auth').login(provider, options)
 
     @logout = ->
       @get('auth').logout()
       @_updateCurrentUser({})
+
+    @classAccessor 'loggedIn', -> !!@get('currentUser.uid')
+    @classAccessor 'loggedOut', -> !@get('currentUser.uid')
 
 Batman.App.classMixin(BatFire.AppUserMixin)

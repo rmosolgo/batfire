@@ -21,12 +21,15 @@ class TestApp.TestModel extends Batman.Model
   console.warn "Not Implemented"
 
 appIsRunning = false
-window.ensureRunning = ->
+@ensureRunning = ->
   if !appIsRunning
     TestApp.run()
     appIsRunning = true
 
-window.newTestRecord = (attrs) ->
+@ensureStopped = ->
+  Batman.currentApp?.stop()
+
+@newTestRecord = (attrs) ->
   ensureRunning()
   record = new TestApp.TestModel(name: "new record")
   record.updateAttributes(attrs)

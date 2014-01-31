@@ -268,9 +268,6 @@
         return this.get('currentUser').mixin(attrs);
       };
       this.login = function(provider, options) {
-        if (provider == null) {
-          provider = null;
-        }
         if (options == null) {
           options = {};
         }
@@ -279,10 +276,16 @@
         }
         return this.get('auth').login(provider, options);
       };
-      return this.logout = function() {
+      this.logout = function() {
         this.get('auth').logout();
         return this._updateCurrentUser({});
       };
+      this.classAccessor('loggedIn', function() {
+        return !!this.get('currentUser.uid');
+      });
+      return this.classAccessor('loggedOut', function() {
+        return !this.get('currentUser.uid');
+      });
     }
   };
 

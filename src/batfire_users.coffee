@@ -2,7 +2,7 @@ class BatFire.User extends Batman.Object
 
 BatFire.AppUserMixin =
   initialize: ->
-    @authorizesWithFirebase = (@defaultProviderString=null) ->
+    @authorizesWithFirebase = (@providers...) ->
       @set 'currentUser', new BatFire.User
       @on 'run', =>
         @set 'auth', new FirebaseSimpleLogin @get('firebase.ref'), (err, user) =>
@@ -12,10 +12,14 @@ BatFire.AppUserMixin =
             @_updateCurrentUser(user)
 
     @_updateCurrentUser = (attrs) ->
-      @get('currentUser').mixin(attrs)
+      @get('currentUser')?.mixin(attrs)
 
-    @login = (provider=null, options={}) ->
-      provider ?= @defaultProviderString
+    @login = (provider, options={}) ->
+      if @providers.length is 1
+        provider ?= @providers[0]
+      if (@providers.length) and (provider not in @providers)
+        throw "Auth provider #{provider} not in whitelisted providers [#{@providers.join(", ")}]"
+
       @get('auth').login(provider, options)
 
     @logout = ->
