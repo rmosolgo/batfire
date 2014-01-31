@@ -6,7 +6,8 @@ module.exports = (config) ->
       'spec/**/*_spec.coffee'
       'spec/lib/batman.js'
       'https://cdn.firebase.com/js/client/1.0.2/firebase.js'
-      'batfire.coffee'
+      'https://cdn.firebase.com/js/simple-login/1.2.3/firebase-simple-login.js'
+      'src/*.coffee'
       'spec/support/spec_helper.coffee'
     ]
     reporters: ['dots']

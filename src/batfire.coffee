@@ -1,4 +1,4 @@
-class BatFire
+class @BatFire
 
 class BatFire.Reference
   constructor: ({@path, @parent}) ->

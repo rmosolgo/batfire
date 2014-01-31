@@ -1,25 +1,16 @@
 
 class BatFire.Storage extends Batman.StorageAdapter
-  @ModelMixin =
-    initialize: ->
-      @encode(@primaryKey)
-
-      _BatFireClearLoaded = @clear
-      @clear = =>
-        result = _BatFireClearLoaded.apply(@)
-        @storageAdapter()._listeningToList = false
-        delete @_firebaseListRef
-        result
-
-      _BatFireLoadRecords = @load
-      @load = (options, callback) =>
-        Batman.developer.warn("Firebase doesn't return all records at once!")
-        _BatFireLoadRecords.apply(@ options, callback)
-
   constructor: ->
     super
     @firebaseClass = Batman.helpers.pluralize(@model.resourceName)
-    @model.classMixin(@ModelMixin)
+    @model.encode(@model.get('primaryKey'))
+
+    _BatFireClearLoaded = @model.clear
+    @model.clear = =>
+      result = _BatFireClearLoaded.apply(@model)
+      @_listeningToList = false
+      delete @model._firebaseListRef
+      result
 
   _listenToList: ->
     if !@_listeningToList
@@ -33,14 +24,19 @@ class BatFire.Storage extends Batman.StorageAdapter
         record = @model.createFromJSON(snapshot.val())
     @_listeningToList = true
 
+  @::before 'readAll', @skipIfError (env, next) ->
+    Batman.developer.warn("Firebase doesn't return all records at once!")
+    next()
+
   @::before 'create', 'update', 'read', 'destroy', 'readAll', 'destroyAll', @skipIfError (env, next) ->
-    @firebaseListRef ?= Batman.currentApp.get('firebase').child(@firebaseClass)
-    if env.subject.get('id')
-      env.firebaseRef = @firebaseListRef.child(env.subject.get('id'))
+    env.primaryKey = @model.primaryKey
+    @model._firebaseListRef ?= Batman.currentApp.get('firebase').child(@firebaseClass)
+    if env.subject.get(env.primaryKey)?
+      env.firebaseRef = @model._firebaseListRef.child(env.subject.get(env.primaryKey))
     else if env.action is 'readAll' or env.action is 'destroyAll'
-      env.firebaseRef = @firebaseListRef
+      env.firebaseRef = @model._firebaseListRef
     else
-      env.firebaseRef = @firebaseListRef.push()
+      env.firebaseRef = @model._firebaseListRef.push()
     next()
 
   @::after 'create', 'update', 'read', 'destroy', @skipIfError (env, next) ->
@@ -53,7 +49,7 @@ class BatFire.Storage extends Batman.StorageAdapter
 
   create: @skipIfError (env, next) ->
     firebaseId = env.firebaseRef.name()
-    env.subject._withoutDirtyTracking -> @set(env.subject.constructor.primaryKey, firebaseId)
+    env.subject._withoutDirtyTracking -> @set(env.primaryKey, firebaseId)
     env.firebaseRef.set env.subject.toJSON(), (err) ->
       if err
         env.error = err
