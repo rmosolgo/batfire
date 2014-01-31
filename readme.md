@@ -119,7 +119,7 @@ BatFire provides a lightweight wrapper around [FirebaseSimpleLogin](https://www.
 <script src='https://cdn.firebase.com/js/simple-login/1.2.3/firebase-simple-login.js'></script>
 ```
 
-Now, in your App definition:
+Promise me that you won't depend on client-side authentication to protect your data. Use [Firebase security rules](https://www.firebase.com/docs/security/security-rules.html)! Now, in your App definition:
 
 ```coffeescript
 class App extends Batman.App
@@ -133,6 +133,7 @@ This adds to `App`:
 - `App.get('currentUser')` is where all the user information will be. It's a `Batman.Object`, so it's observable.
 - `App.get('loggedIn')` and `App.get('loggedOut')` are based on `App.currentUser`.
 - `App.logout()` logs out the current user.
+- `App.get('auth')` is the underlying Firebase auth object.
 
 Since these are on app, you can even use them in bindings:
 
@@ -141,7 +142,9 @@ Since these are on app, you can even use them in bindings:
 <button data-event-click='logout'>Log out</button>
 ```
 
-Also, if you pass a provider string to `authorizesWithFirebase`, it will be used by `App.login`:
+## Default Provider
+
+If you pass a provider string to `authorizesWithFirebase`, it will be used by `App.login`:
 
 ```coffeescript
 class App extends Batman.App
@@ -158,6 +161,7 @@ App.login() # will use 'facebook'
 
 - Allow custom function for generating IDs
 - add `Model.encodesTimestamps` for updatedAt and createdAt and implement it on the storage adapter
+- add `Model.belongsToCurrentUser({scoped, protected})`
 
 # Development
 
