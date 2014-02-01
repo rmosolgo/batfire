@@ -2,31 +2,46 @@
 class BatFire.Storage extends Batman.StorageAdapter
   constructor: ->
     super
-    @firebaseClass = Batman.helpers.pluralize(@model.resourceName)
+    @firebaseClass = firebaseClass = Batman.helpers.pluralize(@model.storageKey || @model.resourceName)
     @model.encode(@model.get('primaryKey'))
 
     _BatFireClearLoaded = @model.clear
     @model.clear = =>
       result = _BatFireClearLoaded.apply(@model)
+      ref = @model.get('ref')
+      ref?.off()
       @model.unset('ref')
       result
 
-  _createRef: ->
+    @model.generateFirebasePath = ->
+      children = []
+      if @get('isScopedToCurrentUser')
+        uid = Batman.currentApp.get('currentUser.uid')
+        if !uid?
+          throw "#{@model.resourceName} is scoped to currentUser -- you must be logged in to access it!"
+        children.push(uid)
+      children.push(firebaseClass)
+      children.join("/")
 
-    children = []
-    if @model.get('isScopedToCurrentUser')
-      uid = Batman.currentApp.get('currentUser.uid')
-      if !uid?
-        throw "#{@model.resourceName} is scoped to currentUser -- you must be logged in to access it!"
-      children.push(uid)
-    children.push(@firebaseClass)
-    firebaseChildPath = children.join("/")
+    @model::generateFirebasePath = ->
+      children = []
+      if @get('isScopedToCurrentUser')
+        uid = @get('created_by_uid')
+        if !uid?
+          throw "#{@constructor.resourceName} is scoped to currentUser -- you must be logged in to access it!"
+        children.push(uid)
+      children.push(firebaseClass)
+      if !@isNew()
+        children.push(@get('id'))
+      children.join("/")
+
+  _createRef: (env) ->
+    firebaseChildPath = env.subject.generateFirebasePath()
     Batman.currentApp.get('firebase').child(firebaseChildPath)
 
 
-  _listenToList: ->
+  _listenToList: (ref) ->
     if !@model.get('ref')
-      ref = @_createRef()
       ref.on 'child_added', (snapshot) =>
         record = @model.createFromJSON(snapshot.val())
       ref.on 'child_removed', (snapshot) =>
@@ -46,13 +61,11 @@ class BatFire.Storage extends Batman.StorageAdapter
 
   @::before 'create', 'update', 'read', 'destroy', 'readAll', 'destroyAll', @skipIfError (env, next) ->
     env.primaryKey = @model.primaryKey
-    ref = @model.get('ref') || @_createRef()
-    if env.subject.get(env.primaryKey)?
-      env.firebaseRef = ref.child(env.subject.get(env.primaryKey))
-    else if env.action is 'readAll' or env.action is 'destroyAll'
-      env.firebaseRef = ref
-    else
+    ref = @_createRef(env)
+    if env.action is 'create'
       env.firebaseRef = ref.push()
+    else
+      env.firebaseRef = ref
     next()
 
   @::after 'create', 'update', 'read', 'destroy', @skipIfError (env, next) ->
@@ -94,7 +107,7 @@ class BatFire.Storage extends Batman.StorageAdapter
       next()
 
   readAll: @skipIfError (env, next) ->
-    @_listenToList()
+    @_listenToList(env.firebaseRef)
     next()
 
   destroyAll:  @skipIfError (env, next) ->

@@ -35,4 +35,10 @@ describe 'login', ->
     expect(TestApp.get('providers')).toEqual(['twitter', 'github'])
 
 describe 'logout', ->
-  it 'empties App.currentUser', -> notImplemented()
+  it 'empties App.currentUser', ->
+    ensureRunning()
+    TestApp._updateCurrentUser({uid: "65432"})
+    TestApp.logout()
+    expect(TestApp.get('currentUser.uid')).toBeUndefined()
+    expect(TestApp.get('loggedOut')).toBe(true)
+    expect(TestApp.get('loggedIn')).toBe(false)

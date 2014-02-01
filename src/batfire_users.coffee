@@ -24,6 +24,8 @@ BatFire.AuthAppMixin =
 
     @logout = ->
       @get('auth').logout()
+      Batman._scopedModels ?= []
+      model.clear() for model in Batman._scopedModels
       @_updateCurrentUser({})
 
     @classAccessor 'loggedIn', ->  !!@get('currentUser.uid')
@@ -64,10 +66,14 @@ BatFire.AuthModelMixin =
       if ownership
         @validate('created_by_uid',{ownedByCurrentUser: true})
         @set('hasUserOwnership', true) # picked up in the storage adapter
-        @accessor 'hasUserOwnership', -> @constructor.get('hasUserOwnership', true) # picked up in the storage adapter
+        @accessor 'hasUserOwnership', -> @constructor.get('hasUserOwnership') # picked up in the storage adapter
 
       if scoped
-        @set('isScopedToCurrentUser') # picked up by storage adapter
+        Batman._scopedModels ?= []
+        Batman._scopedModels.push(@)
+        @set('isScopedToCurrentUser', true) # picked up by storage adapter
+        @accessor 'isScopedToCurrentUser', -> @constructor.get('isScopedToCurrentUser')
+
 
       @accessor 'hasOwner', -> @get('created_by_uid')?
       @accessor 'isOwnedByCurrentUser', ->

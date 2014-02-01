@@ -10,12 +10,10 @@ describe 'App.syncs', ->
         someIntegerSpy()
 
       childRef = TestApp.firebase.child("BatFire/someInteger")
-      childRef.set(5)
       ready = false
+
       runs ->
-        setTimeout ->
-            ready = true
-          , 50 # let firebase catch up
+        childRef.set(5, -> ready = true)
 
       waitsFor -> ready
 
@@ -47,12 +45,10 @@ describe 'App.syncs', ->
         someIntegerSpy()
 
       childRef = TestApp.firebase.child("BatFire/someObject/name")
-      childRef.set("Barky")
       ready = false
+
       runs ->
-        setTimeout ->
-            ready = true
-          , 50 # let firebase catch up
+        childRef.set("Barky", -> ready = true)
 
       waitsFor -> ready
 

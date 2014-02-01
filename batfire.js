@@ -44,7 +44,7 @@
         }));
       };
       this.syncs = function(keypathString, _arg) {
-        var as, childRef, firebasePath, syncConstructor,
+        var as, childRef, firebasePath, syncConstructorName,
           _this = this;
         as = (_arg != null ? _arg : {}).as;
         if (this._syncKeypaths == null) {
@@ -53,7 +53,7 @@
         this._syncKeypaths.push(keypathString);
         firebasePath = keypathString.replace(/\./, '/');
         childRef = this.get('firebase').child("BatFire/" + firebasePath);
-        syncConstructor = as;
+        syncConstructorName = as;
         this.observe(keypathString, function(newValue, oldValue) {
           if (newValue === oldValue || Batman.typeOf(newValue) === 'Undefined') {
             return;
@@ -64,9 +64,10 @@
           return childRef.set(newValue);
         });
         return childRef.on('value', function(snapshot) {
-          var value;
+          var syncConstructor, value;
           value = snapshot.val();
-          if (syncConstructor != null) {
+          if (syncConstructorName != null) {
+            syncConstructor = Batman.currentApp[syncConstructorName];
             value = new syncConstructor(value);
           }
           return _this.set(keypathString, value);
@@ -101,29 +102,62 @@
     __extends(Storage, _super);
 
     function Storage() {
-      var _BatFireClearLoaded,
+      var firebaseClass, _BatFireClearLoaded,
         _this = this;
       Storage.__super__.constructor.apply(this, arguments);
-      this.firebaseClass = Batman.helpers.pluralize(this.model.resourceName);
+      this.firebaseClass = firebaseClass = Batman.helpers.pluralize(this.model.storageKey || this.model.resourceName);
       this.model.encode(this.model.get('primaryKey'));
       _BatFireClearLoaded = this.model.clear;
       this.model.clear = function() {
-        var result;
+        var ref, result;
         result = _BatFireClearLoaded.apply(_this.model);
+        ref = _this.model.get('ref');
+        if (ref != null) {
+          ref.off();
+        }
         _this.model.unset('ref');
         return result;
       };
+      this.model.generateFirebasePath = function() {
+        var children, uid;
+        children = [];
+        if (this.get('isScopedToCurrentUser')) {
+          uid = Batman.currentApp.get('currentUser.uid');
+          if (uid == null) {
+            throw "" + this.model.resourceName + " is scoped to currentUser -- you must be logged in to access it!";
+          }
+          children.push(uid);
+        }
+        children.push(firebaseClass);
+        return children.join("/");
+      };
+      this.model.prototype.generateFirebasePath = function() {
+        var children, uid;
+        children = [];
+        if (this.get('isScopedToCurrentUser')) {
+          uid = this.get('created_by_uid');
+          if (uid == null) {
+            throw "" + this.constructor.resourceName + " is scoped to currentUser -- you must be logged in to access it!";
+          }
+          children.push(uid);
+        }
+        children.push(firebaseClass);
+        if (!this.isNew()) {
+          children.push(this.get('id'));
+        }
+        return children.join("/");
+      };
     }
 
-    Storage.prototype._createRef = function() {
-      return Batman.currentApp.get('firebase').child(this.firebaseClass);
+    Storage.prototype._createRef = function(env) {
+      var firebaseChildPath;
+      firebaseChildPath = env.subject.generateFirebasePath();
+      return Batman.currentApp.get('firebase').child(firebaseChildPath);
     };
 
-    Storage.prototype._listenToList = function() {
-      var ref,
-        _this = this;
+    Storage.prototype._listenToList = function(ref) {
+      var _this = this;
       if (!this.model.get('ref')) {
-        ref = this._createRef();
         ref.on('child_added', function(snapshot) {
           var record;
           return record = _this.model.createFromJSON(snapshot.val());
@@ -141,16 +175,26 @@
       }
     };
 
+    Storage.prototype.before('destroy', 'destroyAll', Storage.skipIfError(function(env, next) {
+      if (env.subject.get('hasUserOwnership')) {
+        if (env.action === 'destroyAll') {
+          env.error = new Error("You can't call destroyAll on these records because some may belong to other users.");
+        }
+        if (env.action === 'destroy' && !env.subject.get('isOwnedByCurrentUser')) {
+          env.error = new Error("You can't destroy this record becasue it doesn't belong to you.");
+        }
+      }
+      return next();
+    }));
+
     Storage.prototype.before('create', 'update', 'read', 'destroy', 'readAll', 'destroyAll', Storage.skipIfError(function(env, next) {
       var ref;
       env.primaryKey = this.model.primaryKey;
-      ref = this.model.get('ref') || this._createRef();
-      if (env.subject.get(env.primaryKey) != null) {
-        env.firebaseRef = ref.child(env.subject.get(env.primaryKey));
-      } else if (env.action === 'readAll' || env.action === 'destroyAll') {
-        env.firebaseRef = ref;
-      } else {
+      ref = this._createRef(env);
+      if (env.action === 'create') {
         env.firebaseRef = ref.push();
+      } else {
+        env.firebaseRef = ref;
       }
       return next();
     }));
@@ -200,7 +244,6 @@
       return env.firebaseRef.set(env.subject.toJSON(), function(err) {
         if (err) {
           env.error = err;
-          console.log(err);
         }
         return next();
       });
@@ -216,7 +259,7 @@
     });
 
     Storage.prototype.readAll = Storage.skipIfError(function(env, next) {
-      this._listenToList();
+      this._listenToList(env.firebaseRef);
       return next();
     });
 
@@ -284,7 +327,16 @@
         return this.get('auth').login(provider, options);
       };
       this.logout = function() {
+        var model, _i, _len, _ref1;
         this.get('auth').logout();
+        if (Batman._scopedModels == null) {
+          Batman._scopedModels = [];
+        }
+        _ref1 = Batman._scopedModels;
+        for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
+          model = _ref1[_i];
+          model.clear();
+        }
         return this._updateCurrentUser({});
       };
       this.classAccessor('loggedIn', function() {
@@ -312,7 +364,7 @@
       if (!record.isNew()) {
         if (!record.get('hasOwner')) {
           errors.add('created_by_uid', "This record doesn't have an owner!");
-        } else if (!record.get('ownedByCurrentUser')) {
+        } else if (!record.get('isOwnedByCurrentUser')) {
           errors.add('created_by_uid', "You don't own this record!");
         }
       }
@@ -327,10 +379,10 @@
 
   BatFire.AuthModelMixin = {
     initialize: function() {
-      this.belongsToCurrentUser = function(_arg) {
-        var attr, ownership, scopes, _fn, _i, _len, _ref2, _ref3,
+      return this.belongsToCurrentUser = function(_arg) {
+        var attr, ownership, scoped, _fn, _i, _len, _ref2, _ref3,
           _this = this;
-        _ref2 = _arg != null ? _arg : {}, scopes = _ref2.scopes, ownership = _ref2.ownership;
+        _ref2 = _arg != null ? _arg : {}, scoped = _ref2.scoped, ownership = _ref2.ownership;
         _ref3 = ['uid', 'email', 'username'];
         _fn = function(attr) {
           var accessorName;
@@ -350,6 +402,9 @@
               return this._currentUserAttrs[attr] = value;
             }
           });
+          _this.accessor(Batman.helpers.camelize(accessorName), function() {
+            return this.get(accessorName);
+          });
           return _this.encode(accessorName);
         };
         for (_i = 0, _len = _ref3.length; _i < _len; _i++) {
@@ -357,17 +412,31 @@
           _fn(attr);
         }
         if (ownership) {
-          return this.validate('created_by_uid', {
+          this.validate('created_by_uid', {
             ownedByCurrentUser: true
           });
+          this.set('hasUserOwnership', true);
+          this.accessor('hasUserOwnership', function() {
+            return this.constructor.get('hasUserOwnership');
+          });
         }
+        if (scoped) {
+          if (Batman._scopedModels == null) {
+            Batman._scopedModels = [];
+          }
+          Batman._scopedModels.push(this);
+          this.set('isScopedToCurrentUser', true);
+          this.accessor('isScopedToCurrentUser', function() {
+            return this.constructor.get('isScopedToCurrentUser');
+          });
+        }
+        this.accessor('hasOwner', function() {
+          return this.get('created_by_uid') != null;
+        });
+        return this.accessor('isOwnedByCurrentUser', function() {
+          return this.get('created_by_uid') && this.get('created_by_uid') === Batman.currentApp.get('currentUser.uid');
+        });
       };
-      this.accessor('hasOwner', function() {
-        return this.get('created_by_uid') != null;
-      });
-      return this.accessor('ownedByCurrentUser', function() {
-        return this.get('created_by_uid') && this.get('created_by_uid') === Batman.currentApp.get('currentUser.uid');
-      });
     }
   };
 

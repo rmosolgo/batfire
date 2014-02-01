@@ -22,14 +22,15 @@ BatFire.AppMixin =
       @_syncKeypaths.push(keypathString)
       firebasePath = keypathString.replace(/\./, '/')
       childRef = @get('firebase').child("BatFire/#{firebasePath}")
-      syncConstructor = as
+      syncConstructorName = as
       @observe keypathString, (newValue, oldValue) =>
         return if newValue is oldValue or Batman.typeOf(newValue) is 'Undefined'
         newValue = newValue.toJSON() if newValue?.toJSON
         childRef.set(newValue)
       childRef.on 'value', (snapshot) =>
         value = snapshot.val()
-        if syncConstructor?
+        if syncConstructorName?
+          syncConstructor = Batman.currentApp[syncConstructorName]
           value = new syncConstructor(value)
         @set(keypathString, value)
 
@@ -53,22 +54,46 @@ Batman.App.classMixin(BatFire.AppMixin)
 class BatFire.Storage extends Batman.StorageAdapter
   constructor: ->
     super
-    @firebaseClass = Batman.helpers.pluralize(@model.resourceName)
+    @firebaseClass = firebaseClass = Batman.helpers.pluralize(@model.storageKey || @model.resourceName)
     @model.encode(@model.get('primaryKey'))
 
     _BatFireClearLoaded = @model.clear
     @model.clear = =>
       result = _BatFireClearLoaded.apply(@model)
+      ref = @model.get('ref')
+      ref?.off()
       @model.unset('ref')
       result
 
-  _createRef: ->
-    Batman.currentApp.get('firebase').child(@firebaseClass)
+    @model.generateFirebasePath = ->
+      children = []
+      if @get('isScopedToCurrentUser')
+        uid = Batman.currentApp.get('currentUser.uid')
+        if !uid?
+          throw "#{@model.resourceName} is scoped to currentUser -- you must be logged in to access it!"
+        children.push(uid)
+      children.push(firebaseClass)
+      children.join("/")
+
+    @model::generateFirebasePath = ->
+      children = []
+      if @get('isScopedToCurrentUser')
+        uid = @get('created_by_uid')
+        if !uid?
+          throw "#{@constructor.resourceName} is scoped to currentUser -- you must be logged in to access it!"
+        children.push(uid)
+      children.push(firebaseClass)
+      if !@isNew()
+        children.push(@get('id'))
+      children.join("/")
+
+  _createRef: (env) ->
+    firebaseChildPath = env.subject.generateFirebasePath()
+    Batman.currentApp.get('firebase').child(firebaseChildPath)
 
 
-  _listenToList: ->
+  _listenToList: (ref) ->
     if !@model.get('ref')
-      ref = @_createRef()
       ref.on 'child_added', (snapshot) =>
         record = @model.createFromJSON(snapshot.val())
       ref.on 'child_removed', (snapshot) =>
@@ -78,15 +103,21 @@ class BatFire.Storage extends Batman.StorageAdapter
         record = @model.createFromJSON(snapshot.val())
       @model.set('ref', ref)
 
+  @::before 'destroy', 'destroyAll', @skipIfError (env, next) ->
+    if env.subject.get('hasUserOwnership')
+      if env.action is 'destroyAll'
+        env.error = new Error("You can't call destroyAll on these records because some may belong to other users.")
+      if env.action is 'destroy' and !env.subject.get('isOwnedByCurrentUser')
+        env.error = new Error("You can't destroy this record becasue it doesn't belong to you.")
+    next()
+
   @::before 'create', 'update', 'read', 'destroy', 'readAll', 'destroyAll', @skipIfError (env, next) ->
     env.primaryKey = @model.primaryKey
-    ref = @model.get('ref') || @_createRef()
-    if env.subject.get(env.primaryKey)?
-      env.firebaseRef = ref.child(env.subject.get(env.primaryKey))
-    else if env.action is 'readAll' or env.action is 'destroyAll'
-      env.firebaseRef = ref
-    else
+    ref = @_createRef(env)
+    if env.action is 'create'
       env.firebaseRef = ref.push()
+    else
+      env.firebaseRef = ref
     next()
 
   @::after 'create', 'update', 'read', 'destroy', @skipIfError (env, next) ->
@@ -119,7 +150,6 @@ class BatFire.Storage extends Batman.StorageAdapter
     env.firebaseRef.set env.subject.toJSON(), (err) ->
       if err
         env.error = err
-        console.log err
       next()
 
   destroy: @skipIfError (env, next) ->
@@ -129,7 +159,7 @@ class BatFire.Storage extends Batman.StorageAdapter
       next()
 
   readAll: @skipIfError (env, next) ->
-    @_listenToList()
+    @_listenToList(env.firebaseRef)
     next()
 
   destroyAll:  @skipIfError (env, next) ->
@@ -163,6 +193,8 @@ BatFire.AuthAppMixin =
 
     @logout = ->
       @get('auth').logout()
+      Batman._scopedModels ?= []
+      model.clear() for model in Batman._scopedModels
       @_updateCurrentUser({})
 
     @classAccessor 'loggedIn', ->  !!@get('currentUser.uid')
@@ -178,7 +210,7 @@ class BatFire.CurrentUserValidator extends Batman.Validator
     if !record.isNew() # only validates existing records
       if !record.get('hasOwner')
         errors.add('created_by_uid', "This record doesn't have an owner!")
-      else if !record.get('ownedByCurrentUser')
+      else if !record.get('isOwnedByCurrentUser')
         errors.add('created_by_uid', "You don't own this record!")
     callback()
 
@@ -186,7 +218,7 @@ Batman.Validators.push(BatFire.CurrentUserValidator)
 
 BatFire.AuthModelMixin =
   initialize: ->
-    @belongsToCurrentUser = ({scopes, ownership}={})->
+    @belongsToCurrentUser = ({scoped, ownership}={})->
       for attr in ['uid', 'email', 'username']
         do (attr) =>
           accessorName = "created_by_#{attr}"
@@ -197,14 +229,23 @@ BatFire.AuthModelMixin =
             set: (key, value) ->
               @_currentUserAttrs ?= {}
               @_currentUserAttrs[attr] = value
-
+          @accessor Batman.helpers.camelize(accessorName), -> @get(accessorName)
           @encode accessorName
 
       if ownership
         @validate('created_by_uid',{ownedByCurrentUser: true})
+        @set('hasUserOwnership', true) # picked up in the storage adapter
+        @accessor 'hasUserOwnership', -> @constructor.get('hasUserOwnership') # picked up in the storage adapter
 
-    @accessor 'hasOwner', -> @get('created_by_uid')?
-    @accessor 'ownedByCurrentUser', ->
-      @get('created_by_uid') and @get('created_by_uid') is Batman.currentApp.get('currentUser.uid')
+      if scoped
+        Batman._scopedModels ?= []
+        Batman._scopedModels.push(@)
+        @set('isScopedToCurrentUser', true) # picked up by storage adapter
+        @accessor 'isScopedToCurrentUser', -> @constructor.get('isScopedToCurrentUser')
+
+
+      @accessor 'hasOwner', -> @get('created_by_uid')?
+      @accessor 'isOwnedByCurrentUser', ->
+        @get('created_by_uid') and @get('created_by_uid') is Batman.currentApp.get('currentUser.uid')
 
 Batman.Model.classMixin(BatFire.AuthModelMixin)

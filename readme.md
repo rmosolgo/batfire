@@ -4,7 +4,10 @@ BatFire is a [Firebase](https://www.firebase.com/) client library for [batman.js
 
 - A storage adapter, [`BatFire.Storage`](#batfirestorage), for saving your records and updating clients in real time
 - App-wide, real-time-syncing accessors with [`@syncs`](#appsyncs)
-- A simple, helpful [wrapper around Firebase authentication](#appauthorizeswithfirebase)
+- A simple [wrapper around Firebase authentication](#appauthorizeswithfirebase)
+- Client-side validations and access control with [`Model.belongsToCurrentUser`](#modelbelongstocurrentuser)
+
+Also see the [Jasmine spec suite](https://github.com/rmosolgo/batfire/tree/master/spec).
 
 # Usage
 
@@ -21,15 +24,15 @@ BatFire is a [Firebase](https://www.firebase.com/) client library for [batman.js
   Be sure to include BatFire _after_ you include batman.js. For example, in the asset pipeline:
 
   ```coffeescript
-  #= require batman
-  #= require batfire
+  #= require ./path/to/batman
+  #= require ./path/to/batfire
   ```
 
   or in your HTML:
 
   ```html
-  <script src='/lib/batman.js'></script>
-  <script src='/lib/batfire.js'></script>
+  <script src='/path/to/batman.js'></script>
+  <script src='/path/to/batfire.js'></script>
   ```
 
 - __YourApp `@syncsWithFirebase("your-app")`__
@@ -96,7 +99,7 @@ __Notes about `BatFire.Storage`:__
 
 ```coffeescript
 class App extends Batman.App
-         # key...            # optional: constructor name for loading from Firebase
+         # key...            # optional: constructor name for loading from Firebase, relative to App
   @syncs 'sandwichOfTheDay', as: "Sandwich"
 App.run()
 
@@ -104,7 +107,7 @@ mySandwich = new App.Sandwich({name: "French Dip", price: "$7.50"})
 App.set('sandwichOfTheDay', mySandwich)
 App.set('sandwichOfTheDay.price', "$6.50")
 # elsewhere...
-App.get('sandwichOfTheDay') # => <Batman.Object, "French Dip">
+App.get('sandwichOfTheDay') # => <App.Sandwich, "French Dip">
 App.get('sandwichOfTheDay.price') # => "$6.50"
 ```
 
@@ -112,7 +115,7 @@ __This comes with some caveats__:
 
 - If you don't [__secure__ the paths on Firebase](https://www.firebase.com/docs/security/security-rules.html), a malevolent user could update these properties via the console and screw everything up!
 - Whatever you're syncing will be sent `toJSON` if it has a `toJSON` method, otherwise it will be sent to Firebase as-is.
-- You may specify a constructor function with `as:`. Objects will be sent to Firebase, and when new values come in, the value will be passed to that constructor.
+- You may specify a constructor function name with `as:`. Objects will be sent to Firebase, and when new values come in, the value will be passed to that constructor.
 - This doesn't work: `App.get('sandwichOfTheDay').set('price')`. Sorry! Do it all at once: `App.set('sandwichOfTheDay.price', "$6.25")`.
 
 
@@ -171,7 +174,6 @@ If you pass one provider string to `authorizesWithFirebase`, it will be used by 
 class App extends Batman.App
   # ...
   @authorizesWithFirebase('facebook')
-
 App.run()
 
 App.login() # will use 'facebook'
@@ -182,7 +184,7 @@ App.login() # will use 'facebook'
 If your app `syncsWithFirebase` and `authorizesWithFirebase`, you can get some out-of-the-box features on your models, too, with `Model.belongsToCurrentUser`. Call this inside a model definition:
 
 ```coffeescript
-class App.Sandwich
+class App.Sandwich extends Batman.Model
   @belongsToCurrentUser scoped: true, ownership: true
 ```
 
@@ -193,10 +195,9 @@ Calling __`@belongsToCurrentUser`__ causes this model to:
 The __`ownership: true`__ option:
 - provides client-side validation on records when being updated or destroyed so that non-creator users can't modify or destroy them (_this should be complemented by Security Rules!_).
 
-<!--
 The __`scoped: true`__ option:
-- makes records visible only to the users who created them. Behind the scenes, their Firebase URLs are namespaced by `currentUser.uid`. This way, calling `Model.load` will only load ones that match `currentUser`. It's not Fort Knox, though. Use a Security Rule to make records read-protected!
--->
+- makes records visible only to the users who created them. Behind the scenes, their Firebase URLs are namespaced by `currentUser.uid`. This way, calling `Model.load` will only load ones that match `currentUser.uid`. It's not Fort Knox, though. Use a Security Rule to make records read-protected!
+- when a user signs out, the loaded set is cleared.
 
 # To do
 

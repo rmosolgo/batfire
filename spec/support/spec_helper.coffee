@@ -10,17 +10,19 @@ class TestApp.TestModel extends Batman.Model
   @persist BatFire.Storage
   @encode 'name', 'type'
   @destroyAll: (callback) ->
-    # return @load (err, records) ->
-    #   records.forEach (m) -> m?.destroy()
     options = undefined
     @_doStorageOperation 'destroyAll', options, (err, records, env) =>
         callback?(err, records, env)
 
 class TestApp.SafeModel extends TestApp.TestModel
+  @storageKey: 'safe_model'
   @belongsToCurrentUser ownership: true
+  @persist BatFire.Storage
 
 class TestApp.ScopedModel extends TestApp.TestModel
+  @storageKey: 'scoped_model'
   @belongsToCurrentUser scoped: true
+  @persist BatFire.Storage
 
 
 @notImplemented = ->
