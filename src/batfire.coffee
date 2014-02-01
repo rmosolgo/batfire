@@ -1,4 +1,5 @@
 class @BatFire
+  @VERSION = '0.0.1'
 
 class BatFire.Reference
   constructor: ({@path, @parent}) ->

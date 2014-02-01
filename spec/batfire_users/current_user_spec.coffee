@@ -20,11 +20,14 @@ describe 'currentUser', ->
 
 describe 'loggedIn/loggedOut', ->
   it 'watches for currentUser', ->
+    TestApp._updateCurrentUser({})
     expect(TestApp.get('loggedIn')).toBe(false)
     expect(TestApp.get('loggedOut')).toBe(true)
-    TestApp.set('currentUser.uid', 'blah blah blah')
+
+    TestApp._updateCurrentUser({uid: 'blah blah blah'})
     expect(TestApp.get('loggedIn')).toBe(true)
     expect(TestApp.get('loggedOut')).toBe(false)
-    TestApp.unset('currentUser')
+
+    TestApp._updateCurrentUser({})
     expect(TestApp.get('loggedIn')).toBe(false)
     expect(TestApp.get('loggedOut')).toBe(true)

@@ -6,8 +6,6 @@ BatFire is a [Firebase](https://www.firebase.com/) client library for [batman.js
 - App-wide, real-time-syncing accessors with [`@syncs`](#appsyncs)
 - A simple, helpful [wrapper around Firebase authentication](#appauthorizeswithfirebase)
 
-It ain't done yet, but everything described here works. See `to do` or the specs.
-
 # Usage
 
 - __Get the files:__
