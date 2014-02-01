@@ -1,4 +1,5 @@
 class @BatFire
+  @VERSION = '0.0.1'
 
 class BatFire.Reference
   constructor: ({@path, @parent}) ->
@@ -58,35 +59,34 @@ class BatFire.Storage extends Batman.StorageAdapter
     _BatFireClearLoaded = @model.clear
     @model.clear = =>
       result = _BatFireClearLoaded.apply(@model)
-      @_listeningToList = false
-      delete @model._firebaseListRef
+      @model.unset('ref')
       result
 
+  _createRef: ->
+    Batman.currentApp.get('firebase').child(@firebaseClass)
+
+
   _listenToList: ->
-    if !@_listeningToList
-      @model._firebaseListRef ?= Batman.currentApp.get('firebase').child(@firebaseClass)
-      @model._firebaseListRef.on 'child_added', (snapshot) =>
+    if !@model.get('ref')
+      ref = @_createRef()
+      ref.on 'child_added', (snapshot) =>
         record = @model.createFromJSON(snapshot.val())
-      @model._firebaseListRef.on 'child_removed', (snapshot) =>
+      ref.on 'child_removed', (snapshot) =>
         record = @model.createFromJSON(snapshot.val())
         @model.get('loaded').remove(record)
-      @model._firebaseListRef.on 'child_changed', (snapshot) =>
+      ref.on 'child_changed', (snapshot) =>
         record = @model.createFromJSON(snapshot.val())
-    @_listeningToList = true
-
-  @::before 'readAll', @skipIfError (env, next) ->
-    Batman.developer.warn("Firebase doesn't return all records at once!")
-    next()
+      @model.set('ref', ref)
 
   @::before 'create', 'update', 'read', 'destroy', 'readAll', 'destroyAll', @skipIfError (env, next) ->
     env.primaryKey = @model.primaryKey
-    @model._firebaseListRef ?= Batman.currentApp.get('firebase').child(@firebaseClass)
+    ref = @model.get('ref') || @_createRef()
     if env.subject.get(env.primaryKey)?
-      env.firebaseRef = @model._firebaseListRef.child(env.subject.get(env.primaryKey))
+      env.firebaseRef = ref.child(env.subject.get(env.primaryKey))
     else if env.action is 'readAll' or env.action is 'destroyAll'
-      env.firebaseRef = @model._firebaseListRef
+      env.firebaseRef = ref
     else
-      env.firebaseRef = @model._firebaseListRef.push()
+      env.firebaseRef = ref.push()
     next()
 
   @::after 'create', 'update', 'read', 'destroy', @skipIfError (env, next) ->
@@ -139,9 +139,9 @@ class BatFire.Storage extends Batman.StorageAdapter
       next()
 class BatFire.User extends Batman.Object
 
-BatFire.AppUserMixin =
+BatFire.AuthAppMixin =
   initialize: ->
-    @authorizesWithFirebase = (@defaultProviderString=null) ->
+    @authorizesWithFirebase = (@providers...) ->
       @set 'currentUser', new BatFire.User
       @on 'run', =>
         @set 'auth', new FirebaseSimpleLogin @get('firebase.ref'), (err, user) =>
@@ -150,18 +150,61 @@ BatFire.AppUserMixin =
           else
             @_updateCurrentUser(user)
 
-    @_updateCurrentUser = (attrs) ->
-      @get('currentUser').mixin(attrs)
+    @_updateCurrentUser = (attrs={}) ->
+      @set("currentUser", new BatFire.User(attrs))
 
     @login = (provider, options={}) ->
-      provider ?= @defaultProviderString
+      if @providers.length is 1
+        provider ?= @providers[0]
+      if (@providers.length) and (provider not in @providers)
+        throw "Auth provider #{provider} not in whitelisted providers [#{@providers.join(", ")}]"
+
       @get('auth').login(provider, options)
 
     @logout = ->
       @get('auth').logout()
       @_updateCurrentUser({})
 
-    @classAccessor 'loggedIn', -> !!@get('currentUser.uid')
-    @classAccessor 'loggedOut', -> !@get('currentUser.uid')
+    @classAccessor 'loggedIn', ->  !!@get('currentUser.uid')
+    @classAccessor 'loggedOut', -> !@get('loggedIn')
 
-Batman.App.classMixin(BatFire.AppUserMixin)
+Batman.App.classMixin(BatFire.AuthAppMixin)
+
+
+class BatFire.CurrentUserValidator extends Batman.Validator
+  @triggers 'ownedByCurrentUser'
+
+  validateEach: (errors, record, key, callback) ->
+    if !record.isNew() # only validates existing records
+      if !record.get('hasOwner')
+        errors.add('created_by_uid', "This record doesn't have an owner!")
+      else if !record.get('ownedByCurrentUser')
+        errors.add('created_by_uid', "You don't own this record!")
+    callback()
+
+Batman.Validators.push(BatFire.CurrentUserValidator)
+
+BatFire.AuthModelMixin =
+  initialize: ->
+    @belongsToCurrentUser = ({scopes, ownership}={})->
+      for attr in ['uid', 'email', 'username']
+        do (attr) =>
+          accessorName = "created_by_#{attr}"
+          @accessor accessorName,
+            get: ->
+              @_currentUserAttrs ?= {}
+              @_currentUserAttrs[attr] ?= Batman.currentApp.get("currentUser.#{attr}")
+            set: (key, value) ->
+              @_currentUserAttrs ?= {}
+              @_currentUserAttrs[attr] = value
+
+          @encode accessorName
+
+      if ownership
+        @validate('created_by_uid',{ownedByCurrentUser: true})
+
+    @accessor 'hasOwner', -> @get('created_by_uid')?
+    @accessor 'ownedByCurrentUser', ->
+      @get('created_by_uid') and @get('created_by_uid') is Batman.currentApp.get('currentUser.uid')
+
+Batman.Model.classMixin(BatFire.AuthModelMixin)

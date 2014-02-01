@@ -6,12 +6,12 @@ describe 'BatFire.Storage.ModelMixin', ->
     expect(TestApp.TestModel::_batman.get('encoders').get(pk)).toBeTruthy()
 
   it 'starts listening on .load', ->
-    expect(TestApp.TestModel.storageAdapter()._listeningToList).toBeFalsy()
+    expect(TestApp.TestModel.get('ref')).toBeFalsy()
     TestApp.TestModel.load()
-    expect(TestApp.TestModel.storageAdapter()._listeningToList).toBeTruthy()
+    expect(TestApp.TestModel.get('ref')).toBeTruthy()
 
   it 'stops listening on .clear', ->
     TestApp.TestModel.load()
-    expect(TestApp.TestModel.storageAdapter()._listeningToList).toBeTruthy()
+    expect(TestApp.TestModel.get('ref')).toBeTruthy()
     TestApp.TestModel.clear()
-    expect(TestApp.TestModel.storageAdapter()._listeningToList).toBeFalsy()
+    expect(TestApp.TestModel.get('ref')).toBeFalsy()

@@ -8,35 +8,51 @@ class BatFire.Storage extends Batman.StorageAdapter
     _BatFireClearLoaded = @model.clear
     @model.clear = =>
       result = _BatFireClearLoaded.apply(@model)
-      @_listeningToList = false
-      delete @model._firebaseListRef
+      @model.unset('ref')
       result
 
+  _createRef: ->
+
+    children = []
+    if @model.get('isScopedToCurrentUser')
+      uid = Batman.currentApp.get('currentUser.uid')
+      if !uid?
+        throw "#{@model.resourceName} is scoped to currentUser -- you must be logged in to access it!"
+      children.push(uid)
+    children.push(@firebaseClass)
+    firebaseChildPath = children.join("/")
+    Batman.currentApp.get('firebase').child(firebaseChildPath)
+
+
   _listenToList: ->
-    if !@_listeningToList
-      @model._firebaseListRef ?= Batman.currentApp.get('firebase').child(@firebaseClass)
-      @model._firebaseListRef.on 'child_added', (snapshot) =>
+    if !@model.get('ref')
+      ref = @_createRef()
+      ref.on 'child_added', (snapshot) =>
         record = @model.createFromJSON(snapshot.val())
-      @model._firebaseListRef.on 'child_removed', (snapshot) =>
+      ref.on 'child_removed', (snapshot) =>
         record = @model.createFromJSON(snapshot.val())
         @model.get('loaded').remove(record)
-      @model._firebaseListRef.on 'child_changed', (snapshot) =>
+      ref.on 'child_changed', (snapshot) =>
         record = @model.createFromJSON(snapshot.val())
-    @_listeningToList = true
+      @model.set('ref', ref)
 
-  @::before 'readAll', @skipIfError (env, next) ->
-    Batman.developer.warn("Firebase doesn't return all records at once!")
+  @::before 'destroy', 'destroyAll', @skipIfError (env, next) ->
+    if env.subject.get('hasUserOwnership')
+      if env.action is 'destroyAll'
+        env.error = new Error("You can't call destroyAll on these records because some may belong to other users.")
+      if env.action is 'destroy' and !env.subject.get('isOwnedByCurrentUser')
+        env.error = new Error("You can't destroy this record becasue it doesn't belong to you.")
     next()
 
   @::before 'create', 'update', 'read', 'destroy', 'readAll', 'destroyAll', @skipIfError (env, next) ->
     env.primaryKey = @model.primaryKey
-    @model._firebaseListRef ?= Batman.currentApp.get('firebase').child(@firebaseClass)
+    ref = @model.get('ref') || @_createRef()
     if env.subject.get(env.primaryKey)?
-      env.firebaseRef = @model._firebaseListRef.child(env.subject.get(env.primaryKey))
+      env.firebaseRef = ref.child(env.subject.get(env.primaryKey))
     else if env.action is 'readAll' or env.action is 'destroyAll'
-      env.firebaseRef = @model._firebaseListRef
+      env.firebaseRef = ref
     else
-      env.firebaseRef = @model._firebaseListRef.push()
+      env.firebaseRef = ref.push()
     next()
 
   @::after 'create', 'update', 'read', 'destroy', @skipIfError (env, next) ->
@@ -69,7 +85,6 @@ class BatFire.Storage extends Batman.StorageAdapter
     env.firebaseRef.set env.subject.toJSON(), (err) ->
       if err
         env.error = err
-        console.log err
       next()
 
   destroy: @skipIfError (env, next) ->

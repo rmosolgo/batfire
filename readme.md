@@ -78,6 +78,12 @@ App.Sandwich.get('all') # => starts listening for new sandwiches on Firebase, ad
 App.Sandwich.clear() # => clears the loaded set, stops listening for new sandwiches
 ```
 
+While the model is connected (ie, you didn't call `Model.clear()`), you can access its Firebase reference directly:
+
+```coffeescript
+App.Sandwich.get('ref') # => bare metal Firebase!
+```
+
 __Notes about `BatFire.Storage`:__
 
 - `BatFire.Storage` will automatically set your model to `@encode` its `primaryKey`
@@ -90,11 +96,11 @@ __Notes about `BatFire.Storage`:__
 
 ```coffeescript
 class App extends Batman.App
-         # key...            # optional: constructor when loading from Firebase
-  @syncs 'sandwichOfTheDay', as: Batman.Object
+         # key...            # optional: constructor name for loading from Firebase
+  @syncs 'sandwichOfTheDay', as: "Sandwich"
 App.run()
 
-mySandwich = new Batman.Object({name: "French Dip", price: "$7.50"})
+mySandwich = new App.Sandwich({name: "French Dip", price: "$7.50"})
 App.set('sandwichOfTheDay', mySandwich)
 App.set('sandwichOfTheDay.price', "$6.50")
 # elsewhere...
@@ -171,11 +177,31 @@ App.run()
 App.login() # will use 'facebook'
 ```
 
+# Model.belongsToCurrentUser
+
+If your app `syncsWithFirebase` and `authorizesWithFirebase`, you can get some out-of-the-box features on your models, too, with `Model.belongsToCurrentUser`. Call this inside a model definition:
+
+```coffeescript
+class App.Sandwich
+  @belongsToCurrentUser scoped: true, ownership: true
+```
+
+Calling __`@belongsToCurrentUser`__ causes this model to:
+- save the current user's `email`, `uid`, `username` on new records as `created_by_#{attr}`
+- add `ownedByCurrentUser` and `hasOwner` accessors to records
+
+The __`ownership: true`__ option:
+- provides client-side validation on records when being updated or destroyed so that non-creator users can't modify or destroy them (_this should be complemented by Security Rules!_).
+
+<!--
+The __`scoped: true`__ option:
+- makes records visible only to the users who created them. Behind the scenes, their Firebase URLs are namespaced by `currentUser.uid`. This way, calling `Model.load` will only load ones that match `currentUser`. It's not Fort Knox, though. Use a Security Rule to make records read-protected!
+-->
+
 # To do
 
 - Allow custom function for generating IDs
 - add `Model.encodesTimestamps` for updatedAt and createdAt and implement it on the storage adapter
-- add `Model.belongsToCurrentUser({scoped, protected})`
 - shorthand `App.syncsWithFirebase(key, {authorizes: authArguments})`
 
 # Development

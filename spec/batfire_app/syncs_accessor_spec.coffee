@@ -1,4 +1,7 @@
-describe 'App.syncsAccessor', ->
+describe 'App.syncs', ->
+  it 'is defined', ->
+    expect(TestApp.syncs).toBeDefined()
+
   describe 'simple values', ->
     it 'responds to changes from outside', ->
       TestApp.set('someInteger', 3)
@@ -75,12 +78,12 @@ describe 'App.syncsAccessor', ->
 
   describe 'maintaining type', ->
     it 'responds to changes from outside', ->
-      TestApp.set('someBatmanObject', new Batman.Object({name: "Cake", type: "dessert"}))
+      TestApp.set('someTestModel', new TestApp.TestModel({name: "Cake", type: "dessert"}))
       someBatmanObjectSpy = jasmine.createSpy()
-      TestApp.observe 'someBatmanObject.name', ->
+      TestApp.observe 'someTestModel.name', ->
         someBatmanObjectSpy()
 
-      childRef = TestApp.firebase.child("BatFire/someBatmanObject/name")
+      childRef = TestApp.firebase.child("BatFire/someTestModel/name")
       childRef.set("Pie")
       ready = false
       runs ->
@@ -92,13 +95,13 @@ describe 'App.syncsAccessor', ->
 
       runs ->
         expect(someBatmanObjectSpy).toHaveBeenCalled()
-        expect(TestApp.get('someBatmanObject').constructor).toEqual((new Batman.Object).constructor)
-        expect(TestApp.get('someBatmanObject.name')).toEqual('Pie')
+        expect(TestApp.get('someTestModel').constructor.resourceName).toEqual('test_model')
+        expect(TestApp.get('someTestModel.name')).toEqual('Pie')
 
     it 'sends updates back to firebase', ->
-      TestApp.set('someBatmanObject', new Batman.Object({name: "Mittens", type: 'cat'}))
-      TestApp.set('someBatmanObject.name', 'Meowy')
-      childRef = TestApp.firebase.child("BatFire/someBatmanObject")
+      TestApp.set('someTestModel', new TestApp.TestModel({name: "Mittens", type: 'cat'}))
+      TestApp.set('someTestModel.name', 'Meowy')
+      childRef = TestApp.firebase.child("BatFire/someTestModel")
       ready = false
       firebaseValue = null
 
@@ -110,4 +113,5 @@ describe 'App.syncsAccessor', ->
       waitsFor -> ready
 
       runs ->
+        expect(TestApp.get('someTestModel').toJSON()).toEqual({name: "Meowy", type: 'cat'})
         expect(firebaseValue).toEqual({name: "Meowy", type: 'cat'})

@@ -3,19 +3,25 @@ class @TestApp extends Batman.App
   @authorizesWithFirebase('github')
   @syncs 'someInteger'
   @syncs 'someObject'
-  @syncs 'someBatmanObject', as: Batman.Object
+  @syncs 'someTestModel', as: "TestModel"
 
 class TestApp.TestModel extends Batman.Model
   @resourceName: 'test_model'
   @persist BatFire.Storage
-  @encode 'name'
-
+  @encode 'name', 'type'
   @destroyAll: (callback) ->
     # return @load (err, records) ->
     #   records.forEach (m) -> m?.destroy()
     options = undefined
     @_doStorageOperation 'destroyAll', options, (err, records, env) =>
         callback?(err, records, env)
+
+class TestApp.SafeModel extends TestApp.TestModel
+  @belongsToCurrentUser ownership: true
+
+class TestApp.ScopedModel extends TestApp.TestModel
+  @belongsToCurrentUser scoped: true
+
 
 @notImplemented = ->
   console.warn "Not Implemented"

@@ -9,14 +9,15 @@ BatFire.AppMixin =
       @_syncKeypaths.push(keypathString)
       firebasePath = keypathString.replace(/\./, '/')
       childRef = @get('firebase').child("BatFire/#{firebasePath}")
-      syncConstructor = as
+      syncConstructorName = as
       @observe keypathString, (newValue, oldValue) =>
         return if newValue is oldValue or Batman.typeOf(newValue) is 'Undefined'
         newValue = newValue.toJSON() if newValue?.toJSON
         childRef.set(newValue)
       childRef.on 'value', (snapshot) =>
         value = snapshot.val()
-        if syncConstructor?
+        if syncConstructorName?
+          syncConstructor = Batman.currentApp[syncConstructorName]
           value = new syncConstructor(value)
         @set(keypathString, value)
 
