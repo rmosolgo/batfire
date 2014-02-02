@@ -211,6 +211,7 @@ The __`scoped: true`__ option:
 
 # Development
 
+- `npm install`
 - tests: `npm run-script spec`
 - build: `npm run-script build`
 
