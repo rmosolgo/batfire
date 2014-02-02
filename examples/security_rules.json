@@ -46,10 +46,10 @@
       "syncs" : {
         // @syncs is write protected
         ".read" : true,
-        ".write" : false,
+        ".write" : false
       },
       "records" : {
-        // `scoped` records verify the UID,
+        // `scoped` records verify the UID
         "scoped" : {
           "$uid" : {
             ".write" : "auth.uid == $uid",

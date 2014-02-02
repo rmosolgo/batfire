@@ -7,7 +7,7 @@ BatFire is a [Firebase](https://www.firebase.com/) client library for [batman.js
 - A simple [wrapper around Firebase authentication](#appauthorizeswithfirebase)
 - Client-side pseudo-access control with [`Model.belongsToCurrentUser`](#modelbelongstocurrentuser)
 
-Also see [example security rules](#) and the [Jasmine spec suite](https://github.com/rmosolgo/batfire/tree/master/spec).
+Also see [example security rules](https://github.com/rmosolgo/batfire/blob/master/examples/security_rules.json) and the [Jasmine spec suite](https://github.com/rmosolgo/batfire/tree/master/spec).
 
 # Usage
 
@@ -117,7 +117,7 @@ Under the hood, all these accessors' Firebase URLs are prefixed with `BatFire/sy
 
 __This comes with some caveats__:
 
-- If you don't [__secure__ the paths on Firebase](https://www.firebase.com/docs/security/security-rules.html), a malevolent user could update these properties via the console and screw everything up!
+- If you don't [__secure__ the paths on Firebase](https://www.firebase.com/docs/security/security-rules.html) ([examples](https://github.com/rmosolgo/batfire/blob/master/examples/security_rules.json)], a malevolent user could update these properties via the console and screw everything up!
 - Whatever you're syncing will be sent `toJSON` if it has a `toJSON` method, otherwise it will be sent to Firebase as-is.
 - You may specify a constructor function name with `as:`. Objects will be sent to Firebase, and when new values come in, the value will be passed to that constructor.
 - This doesn't work: `App.get('sandwichOfTheDay').set('price')`. Sorry! Do it all at once: `App.set('sandwichOfTheDay.price', "$6.25")`.
@@ -130,7 +130,7 @@ BatFire provides a lightweight wrapper around [FirebaseSimpleLogin](https://www.
 - include the Firebase login client (see [FirebaseSimpleLogin overview](https://www.firebase.com/docs/security/simple-login-overview.html))
 - register your app with whatever providers you're using (eg, [github](https://www.firebase.com/docs/security/simple-login-github.html))
 
-Promise me that you won't depend on client-side authentication to protect your data. Use __[Firebase security rules](https://www.firebase.com/docs/security/security-rules.html)__! Now, in your App definition:
+Promise me that you won't depend on client-side authentication to protect your data. Use __[Firebase security rules](https://www.firebase.com/docs/security/security-rules.html)__ ([examples](https://github.com/rmosolgo/batfire/blob/master/examples/security_rules.json)! Now, in your App definition:
 
 ```coffeescript
 class App extends Batman.App
@@ -197,10 +197,10 @@ Calling __`@belongsToCurrentUser`__ causes this model to:
 - add `ownedByCurrentUser` and `hasOwner` accessors to records
 
 The __`ownership: true`__ option:
-- provides client-side validation on records when being updated or destroyed so that non-creator users can't modify or destroy them (_this should be complemented by Security Rules!_).
+- provides client-side validation on records when being updated or destroyed so that non-creator users can't modify or destroy them (_this should be complemented by Security Rules_, for [example](https://github.com/rmosolgo/batfire/blob/master/examples/security_rules.json)...).
 
 The __`scoped: true`__ option:
-- makes records visible only to the users who created them. Behind the scenes, their Firebase URLs are namespaced by `BatFire/records/scoped/$uid`. This way, calling `Model.load` will only load ones that match `currentUser.uid`. It's not Fort Knox, though. Use a Security Rule to make records read-protected!
+- makes records visible only to the users who created them. Behind the scenes, their Firebase URLs are namespaced by `BatFire/records/scoped/$uid`. This way, calling `Model.load` will only load ones that match `currentUser.uid`. It's not Fort Knox, though. Use a Security Rule (like [these](https://github.com/rmosolgo/batfire/blob/master/examples/security_rules.json)) to make records read-protected!
 - when a user signs out, the loaded set is cleared.
 
 # To do
