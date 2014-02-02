@@ -6,14 +6,14 @@ describe 'Model.belongsToCurrentUser', ->
   describe 'scope: true', ->
     it 'prefixes the storageUrl', ->
       modelPath = TestApp.ScopedModel.generateFirebasePath()
-      expect(modelPath).toEqual("12345/scoped_models")
+      expect(modelPath).toEqual("records/scoped/12345/scoped_models")
 
       recordPath = TestApp.ScopedModel::generateFirebasePath()
-      expect(recordPath).toEqual("12345/scoped_models")
+      expect(recordPath).toEqual("records/scoped/12345/scoped_models")
 
       pseudoSavedRecord = TestApp.ScopedModel.createFromJSON({id: 5})
       savedRecordPath = pseudoSavedRecord.generateFirebasePath()
-      expect(savedRecordPath).toEqual("12345/scoped_models/5")
+      expect(savedRecordPath).toEqual("records/scoped/12345/scoped_models/5")
 
     it "doesn't put other peoples' in the loaded set", ->
       sm = new TestApp.ScopedModel(name: "Whiskers", type: "Mouse")
@@ -33,7 +33,7 @@ describe 'Model.belongsToCurrentUser', ->
       waitsFor -> ready
 
       runs ->
-        expect(TestApp.ScopedModel.generateFirebasePath()).toEqual("54321/scoped_models")
+        expect(TestApp.ScopedModel.generateFirebasePath()).toEqual("records/scoped/54321/scoped_models")
         expect(TestApp.ScopedModel.get('all.length')).toEqual(0)
 
     it "clears the loaded set on logout", ->

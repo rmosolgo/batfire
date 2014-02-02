@@ -9,7 +9,7 @@ describe 'App.syncs', ->
       TestApp.observe 'someInteger', ->
         someIntegerSpy()
 
-      childRef = TestApp.firebase.child("BatFire/someInteger")
+      childRef = TestApp.firebase.child("syncs/someInteger")
       ready = false
 
       runs ->
@@ -23,7 +23,7 @@ describe 'App.syncs', ->
 
     it 'sends updates back to firebase', ->
       TestApp.set('someInteger', 19)
-      childRef = TestApp.firebase.child("BatFire/someInteger")
+      childRef = TestApp.firebase.child("syncs/someInteger")
       ready = false
       firebaseValue = null
 
@@ -44,7 +44,7 @@ describe 'App.syncs', ->
       TestApp.observe 'someObject.name', ->
         someIntegerSpy()
 
-      childRef = TestApp.firebase.child("BatFire/someObject/name")
+      childRef = TestApp.firebase.child("syncs/someObject/name")
       ready = false
 
       runs ->
@@ -58,7 +58,7 @@ describe 'App.syncs', ->
 
     it 'sends updates back to firebase', ->
       TestApp.set('someObject', {name: "Mittens", type: 'cat'})
-      childRef = TestApp.firebase.child("BatFire/someObject")
+      childRef = TestApp.firebase.child("syncs/someObject")
       ready = false
       firebaseValue = null
 
@@ -79,7 +79,7 @@ describe 'App.syncs', ->
       TestApp.observe 'someTestModel.name', ->
         someBatmanObjectSpy()
 
-      childRef = TestApp.firebase.child("BatFire/someTestModel/name")
+      childRef = TestApp.firebase.child("syncs/someTestModel/name")
       childRef.set("Pie")
       ready = false
       runs ->
@@ -97,7 +97,7 @@ describe 'App.syncs', ->
     it 'sends updates back to firebase', ->
       TestApp.set('someTestModel', new TestApp.TestModel({name: "Mittens", type: 'cat'}))
       TestApp.set('someTestModel.name', 'Meowy')
-      childRef = TestApp.firebase.child("BatFire/someTestModel")
+      childRef = TestApp.firebase.child("syncs/someTestModel")
       ready = false
       firebaseValue = null
 

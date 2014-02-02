@@ -14,21 +14,23 @@ class BatFire.Storage extends Batman.StorageAdapter
       result
 
     @model.generateFirebasePath = ->
-      children = []
+      children = ['records']
       if @get('isScopedToCurrentUser')
         uid = Batman.currentApp.get('currentUser.uid')
         if !uid?
           throw "#{@model.resourceName} is scoped to currentUser -- you must be logged in to access it!"
+        children.push('scoped')
         children.push(uid)
       children.push(firebaseClass)
       children.join("/")
 
     @model::generateFirebasePath = ->
-      children = []
+      children = ['records']
       if @get('isScopedToCurrentUser')
         uid = @get('created_by_uid')
         if !uid?
           throw "#{@constructor.resourceName} is scoped to currentUser -- you must be logged in to access it!"
+        children.push('scoped')
         children.push(uid)
       children.push(firebaseClass)
       if !@isNew()

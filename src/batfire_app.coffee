@@ -1,14 +1,14 @@
 BatFire.AppMixin =
   initialize: ->
     @syncsWithFirebase = (@firebaseAppName) ->
-      @firebaseURL = "https://#{@firebaseAppName}.firebaseio.com/"
+      @firebaseURL = "https://#{@firebaseAppName}.firebaseio.com/BatFire"
       @set 'firebase', new BatFire.Reference(path: @firebaseURL)
 
     @syncs = (keypathString, {as}={}) ->
       @_syncKeypaths ?= []
       @_syncKeypaths.push(keypathString)
       firebasePath = keypathString.replace(/\./, '/')
-      childRef = @get('firebase').child("BatFire/#{firebasePath}")
+      childRef = @get('firebase').child("syncs/#{firebasePath}")
       syncConstructorName = as
       @observe keypathString, (newValue, oldValue) =>
         return if newValue is oldValue or Batman.typeOf(newValue) is 'Undefined'
@@ -23,7 +23,7 @@ BatFire.AppMixin =
 
     @_updateFirebaseChild = (keypathString, newValue) ->
       firebasePath = keypathString.replace(/\./, '/')
-      childRef = @get('firebase').child("BatFire/#{firebasePath}")
+      childRef = @get('firebase').child("syncs/#{firebasePath}")
       newValue = newValue.toJSON() if newValue?.toJSON
       childRef.set(newValue)
 

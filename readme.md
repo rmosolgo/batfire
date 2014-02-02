@@ -5,9 +5,9 @@ BatFire is a [Firebase](https://www.firebase.com/) client library for [batman.js
 - A storage adapter, [`BatFire.Storage`](#batfirestorage), for saving your records and updating clients in real time
 - App-wide, real-time-syncing accessors with [`@syncs`](#appsyncs)
 - A simple [wrapper around Firebase authentication](#appauthorizeswithfirebase)
-- Client-side validations and access control with [`Model.belongsToCurrentUser`](#modelbelongstocurrentuser)
+- Client-side pseudo-access control with [`Model.belongsToCurrentUser`](#modelbelongstocurrentuser)
 
-Also see the [Jasmine spec suite](https://github.com/rmosolgo/batfire/tree/master/spec).
+Also see [example security rules](#) and the [Jasmine spec suite](https://github.com/rmosolgo/batfire/tree/master/spec).
 
 # Usage
 
@@ -87,6 +87,8 @@ While the model is connected (ie, you didn't call `Model.clear()`), you can acce
 App.Sandwich.get('ref') # => bare metal Firebase!
 ```
 
+By the way, all model data URLs are prefixed with `BatFire/records`.
+
 __Notes about `BatFire.Storage`:__
 
 - `BatFire.Storage` will automatically set your model to `@encode` its `primaryKey`
@@ -110,6 +112,8 @@ App.set('sandwichOfTheDay.price', "$6.50")
 App.get('sandwichOfTheDay') # => <App.Sandwich, "French Dip">
 App.get('sandwichOfTheDay.price') # => "$6.50"
 ```
+
+Under the hood, all these accessors' Firebase URLs are prefixed with `BatFire/syncs/`.
 
 __This comes with some caveats__:
 
@@ -196,7 +200,7 @@ The __`ownership: true`__ option:
 - provides client-side validation on records when being updated or destroyed so that non-creator users can't modify or destroy them (_this should be complemented by Security Rules!_).
 
 The __`scoped: true`__ option:
-- makes records visible only to the users who created them. Behind the scenes, their Firebase URLs are namespaced by `currentUser.uid`. This way, calling `Model.load` will only load ones that match `currentUser.uid`. It's not Fort Knox, though. Use a Security Rule to make records read-protected!
+- makes records visible only to the users who created them. Behind the scenes, their Firebase URLs are namespaced by `BatFire/records/scoped/$uid`. This way, calling `Model.load` will only load ones that match `currentUser.uid`. It's not Fort Knox, though. Use a Security Rule to make records read-protected!
 - when a user signs out, the loaded set is cleared.
 
 # To do

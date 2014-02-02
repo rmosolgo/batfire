@@ -1,0 +1,72 @@
+// These rules are provided for imformational purposes only :)
+
+// To make @sync accessors write-protected:
+{
+  "rules": {
+    "BatFire" : {
+      ".read" : true,
+      "syncs" : {
+        ".write" : false
+      },
+      "$other" : {
+        ".write" : true
+      }
+    }
+  }
+}
+
+// To make `scoped=true` models available only to their owners:
+{
+  "rules": {
+    "BatFire" : {
+      "records" : {
+        "scoped" : {
+          "$uid" : {
+            ".write" : "auth.uid == $uid",
+            ".read" : "auth.uid == $uid"
+          }
+        },
+        "$other" : {
+          ".read" : true,
+          ".write" : true
+        }
+      },
+      "$other" : {
+        ".read" : true,
+        ".write" : true
+      }
+    }
+  }
+}
+
+// All together now:
+{
+  "rules": {
+    "BatFire" : {
+      "syncs" : {
+        // @syncs is write protected
+        ".read" : true,
+        ".write" : false,
+      },
+      "records" : {
+        // `scoped` records verify the UID,
+        "scoped" : {
+          "$uid" : {
+            ".write" : "auth.uid == $uid",
+            ".read" : "auth.uid == $uid"
+          }
+        },
+        // other records are fair game for everyone
+        "$other" : {
+          ".read" : true,
+          ".write" : true
+        }
+      }
+    },
+    // Outside BatFire is fair game for everyone
+    "$other" : {
+      ".read" : true,
+      ".write" : true
+    }
+  }
+}
