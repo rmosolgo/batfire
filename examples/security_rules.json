@@ -72,10 +72,10 @@
             ".read" : "auth.uid == $uid"
           }
         },
-        // other records are fair game for everyone
+        // `ownership=true` models write-protected:
         "$other" : {
           ".read" : true,
-          ".write" : true
+          ".write" : "data.val()['has_user_ownership'] ? auth.uid == data.val()['created_by_uid'] : true"
         }
       }
     },
