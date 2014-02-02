@@ -198,6 +198,7 @@ Calling __`@belongsToCurrentUser`__ causes this model to:
 
 The __`ownership: true`__ option:
 - provides client-side validation on records when being updated or destroyed so that non-creator users can't modify or destroy them (_this should be complemented by Security Rules_, for [example](https://github.com/rmosolgo/batfire/blob/master/examples/security_rules.json)...).
+- encodes `has_user_ownership=true`, which you can use in your security rules.
 
 The __`scoped: true`__ option:
 - makes records visible only to the users who created them. Behind the scenes, their Firebase URLs are namespaced by `BatFire/records/scoped/$uid`. This way, calling `Model.load` will only load ones that match `currentUser.uid`. It's not Fort Knox, though. Use a Security Rule (like [these](https://github.com/rmosolgo/batfire/blob/master/examples/security_rules.json)) to make records read-protected!

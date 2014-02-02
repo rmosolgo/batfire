@@ -63,10 +63,15 @@ BatFire.AuthModelMixin =
           @accessor Batman.helpers.camelize(accessorName), -> @get(accessorName)
           @encode accessorName
 
+      @accessor 'hasOwner', -> @get('created_by_uid')?
+      @accessor 'isOwnedByCurrentUser', ->
+        @get('created_by_uid') and @get('created_by_uid') is Batman.currentApp.get('currentUser.uid')
+
       if ownership
         @validate('created_by_uid',{ownedByCurrentUser: true})
         @set('hasUserOwnership', true) # picked up in the storage adapter
         @accessor 'hasUserOwnership', -> @constructor.get('hasUserOwnership') # picked up in the storage adapter
+        @encode('hasUserOwnership', as: 'has_user_ownership')
 
       if scoped
         Batman._scopedModels ?= []
@@ -75,8 +80,5 @@ BatFire.AuthModelMixin =
         @accessor 'isScopedToCurrentUser', -> @constructor.get('isScopedToCurrentUser')
 
 
-      @accessor 'hasOwner', -> @get('created_by_uid')?
-      @accessor 'isOwnedByCurrentUser', ->
-        @get('created_by_uid') and @get('created_by_uid') is Batman.currentApp.get('currentUser.uid')
 
 Batman.Model.classMixin(BatFire.AuthModelMixin)

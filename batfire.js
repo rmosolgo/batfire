@@ -9,7 +9,7 @@
   this.BatFire = (function() {
     function BatFire() {}
 
-    BatFire.VERSION = '0.0.1';
+    BatFire.VERSION = '0.1.0';
 
     return BatFire;
 
@@ -38,7 +38,7 @@
       var appSet;
       this.syncsWithFirebase = function(firebaseAppName) {
         this.firebaseAppName = firebaseAppName;
-        this.firebaseURL = "https://" + this.firebaseAppName + ".firebaseio.com/";
+        this.firebaseURL = "https://" + this.firebaseAppName + ".firebaseio.com/BatFire";
         return this.set('firebase', new BatFire.Reference({
           path: this.firebaseURL
         }));
@@ -52,7 +52,7 @@
         }
         this._syncKeypaths.push(keypathString);
         firebasePath = keypathString.replace(/\./, '/');
-        childRef = this.get('firebase').child("BatFire/" + firebasePath);
+        childRef = this.get('firebase').child("syncs/" + firebasePath);
         syncConstructorName = as;
         this.observe(keypathString, function(newValue, oldValue) {
           if (newValue === oldValue || Batman.typeOf(newValue) === 'Undefined') {
@@ -76,7 +76,7 @@
       this._updateFirebaseChild = function(keypathString, newValue) {
         var childRef, firebasePath;
         firebasePath = keypathString.replace(/\./, '/');
-        childRef = this.get('firebase').child("BatFire/" + firebasePath);
+        childRef = this.get('firebase').child("syncs/" + firebasePath);
         if (newValue != null ? newValue.toJSON : void 0) {
           newValue = newValue.toJSON();
         }
@@ -120,12 +120,13 @@
       };
       this.model.generateFirebasePath = function() {
         var children, uid;
-        children = [];
+        children = ['records'];
         if (this.get('isScopedToCurrentUser')) {
           uid = Batman.currentApp.get('currentUser.uid');
           if (uid == null) {
             throw "" + this.model.resourceName + " is scoped to currentUser -- you must be logged in to access it!";
           }
+          children.push('scoped');
           children.push(uid);
         }
         children.push(firebaseClass);
@@ -133,12 +134,13 @@
       };
       this.model.prototype.generateFirebasePath = function() {
         var children, uid;
-        children = [];
+        children = ['records'];
         if (this.get('isScopedToCurrentUser')) {
           uid = this.get('created_by_uid');
           if (uid == null) {
             throw "" + this.constructor.resourceName + " is scoped to currentUser -- you must be logged in to access it!";
           }
+          children.push('scoped');
           children.push(uid);
         }
         children.push(firebaseClass);
@@ -411,6 +413,12 @@
           attr = _ref3[_i];
           _fn(attr);
         }
+        this.accessor('hasOwner', function() {
+          return this.get('created_by_uid') != null;
+        });
+        this.accessor('isOwnedByCurrentUser', function() {
+          return this.get('created_by_uid') && this.get('created_by_uid') === Batman.currentApp.get('currentUser.uid');
+        });
         if (ownership) {
           this.validate('created_by_uid', {
             ownedByCurrentUser: true
@@ -419,6 +427,9 @@
           this.accessor('hasUserOwnership', function() {
             return this.constructor.get('hasUserOwnership');
           });
+          this.encode('hasUserOwnership', {
+            as: 'has_user_ownership'
+          });
         }
         if (scoped) {
           if (Batman._scopedModels == null) {
@@ -426,16 +437,10 @@
           }
           Batman._scopedModels.push(this);
           this.set('isScopedToCurrentUser', true);
-          this.accessor('isScopedToCurrentUser', function() {
+          return this.accessor('isScopedToCurrentUser', function() {
             return this.constructor.get('isScopedToCurrentUser');
           });
         }
-        this.accessor('hasOwner', function() {
-          return this.get('created_by_uid') != null;
-        });
-        return this.accessor('isOwnedByCurrentUser', function() {
-          return this.get('created_by_uid') && this.get('created_by_uid') === Batman.currentApp.get('currentUser.uid');
-        });
       };
     }
   };

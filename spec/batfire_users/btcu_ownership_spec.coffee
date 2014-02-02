@@ -56,3 +56,7 @@ describe 'Model.belongsToCurrentUser', ->
         expect(foundRecord.get('errors.length')).toEqual(0)
         foundRecord.destroy (err, record) ->
           expect(err).toBeFalsy()
+
+    it "encodes has_user_ownership=true", ->
+      sm = new TestApp.SafeModel
+      expect(sm.toJSON()['has_user_ownership']).toBe(true)
