@@ -1,0 +1,26 @@
+{
+  "name": "Batfire",
+  "main": "[\"batfire.js\", \"batfire.min.js\", \"batfire.coffee\"]",
+  "version": "0.0.1",
+  "homepage": "https://github.com/rmosolgo/batfire",
+  "authors": [
+    "Robert Mosolgo <rdmosolgo@gmail.com>"
+  ],
+  "description": "Firebase bindings for batman.js",
+  "keywords": [
+    "Batman.js",
+    "Firebase",
+    "Data Binding",
+    "Live Updates",
+    "Data Storage",
+    "Database"
+  ],
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ]
+}
