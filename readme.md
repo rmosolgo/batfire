@@ -13,7 +13,12 @@ Also see [example security rules](https://github.com/rmosolgo/batfire/blob/maste
 
 - __Get the files:__
 
-  Download BatFire in a form of your choice:
+  Install with bower:
+  ```
+  bower install batfire
+  ```
+
+  Or download BatFire in a form of your choice:
 
   - [CoffeeScript](https://raw.github.com/rmosolgo/batfire/master/batfire.coffee)
   - [JavaScript](https://raw.github.com/rmosolgo/batfire/master/batfire.js)
@@ -21,9 +26,10 @@ Also see [example security rules](https://github.com/rmosolgo/batfire/blob/maste
 
 - __Load the files:__
 
-  Be sure to include BatFire _after_ you include batman.js. For example, in the asset pipeline:
+  Be sure to include BatFire _after_ you include Firebase and batman.js. For example, in the asset pipeline:
 
   ```coffeescript
+  #= require ./path/to/firebase
   #= require ./path/to/batman
   #= require ./path/to/batfire
   ```
@@ -31,6 +37,7 @@ Also see [example security rules](https://github.com/rmosolgo/batfire/blob/maste
   or in your HTML:
 
   ```html
+  <script src='/path/to/firebase.js'></script>
   <script src='/path/to/batman.js'></script>
   <script src='/path/to/batfire.js'></script>
   ```
