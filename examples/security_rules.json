@@ -1,85 +1,34 @@
-// These rules are provided for imformational purposes only :)
-
-// To make @sync accessors write-protected:
+/* These rules are provided for imformational purposes only :) */
 {
   "rules": {
+    /* All items are namespaced by `BatFire` */
     "BatFire" : {
-      ".read" : true,
+      /* Make `@syncs` accessors read-only */
       "syncs" : {
-        ".write" : false
-      },
-      "$other" : {
-        ".write" : true
-      }
-    }
-  }
-}
-
-// To make `scoped=true` models available only to their owners:
-{
-  "rules": {
-    "BatFire" : {
-      "records" : {
-        "scoped" : {
-          "$uid" : {
-            ".write" : "auth.uid == $uid",
-            ".read" : "auth.uid == $uid"
-          }
-        },
-        "$other" : {
-          ".read" : true,
-          ".write" : true
-        }
-      },
-      "$other" : {
-        ".read" : true,
-        ".write" : true
-      }
-    }
-  }
-}
-
-// To make `ownership=true` models write-protected:
-{
-  "rules": {
-    "BatFire" : {
-      "records" : {
-        ".read" : true,
-        ".write" : "data.val()['has_user_ownership'] ? auth.uid == data.val()['created_by_uid'] : true"
-      },
-      "$other" : {
-        ".read" : true,
-        ".write" : true
-      }
-    }
-  }
-}
-
-// All together now:
-{
-  "rules": {
-    "BatFire" : {
-      "syncs" : {
-        // @syncs is write protected
         ".read" : true,
         ".write" : false
       },
+      /* All records namespaced by `records` */
       "records" : {
-        // `scoped` records verify the UID
         "scoped" : {
+          /* "Server-side" validation for @belongsToCurrentUser(scoped: true) */
           "$uid" : {
-            ".write" : "auth.uid == $uid",
-            ".read" : "auth.uid == $uid"
+            ".write" : "$uid == auth.uid",
+            ".read" : "$uid == auth.uid"
           }
         },
-        // `ownership=true` models write-protected:
-        "$other" : {
-          ".read" : true,
-          ".write" : "data.val()['has_user_ownership'] ? auth.uid == data.val()['created_by_uid'] : true"
+        "$resourceName" : {
+          /* "Server-side" validation for @belongsToCurrentUser(ownership: true) */
+          "$recordId" : {
+            /* Allows non-belongsToCurrentUser records to be written but protect owned ones */
+            ".write" : "!data.hasChild('has_user_ownership') || data.child('created_by_uid').val() == auth.uid"
+          },
+          ".read" : true
+          /* nothing gets written here -- everything gets an ID _before_ create */
         }
       }
     },
-    // Outside BatFire is fair game for everyone
+    /* Everything else is fair game */
     "$other" : {
       ".read" : true,
       ".write" : true
