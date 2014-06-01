@@ -56,10 +56,11 @@ BatFire.AuthModelMixin =
           @accessor accessorName,
             get: ->
               @_currentUserAttrs ?= {}
-              @_currentUserAttrs[attr] ?= Batman.currentApp.get("currentUser.#{attr}")
+              @_currentUserAttrs[attr]
             set: (key, value) ->
               @_currentUserAttrs ?= {}
               @_currentUserAttrs[attr] = value
+          @::on 'enter creating', -> @set(accessorName, Batman.currentApp.get('currentUser').get(attr))
           @accessor Batman.helpers.camelize(accessorName), -> @get(accessorName)
           @encode accessorName
 

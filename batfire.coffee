@@ -65,37 +65,48 @@ class BatFire.Storage extends Batman.StorageAdapter
       @model.unset('ref')
       result
 
-    @model.generateFirebasePath = ->
+    @model.classAccessor 'firebasePath', ->
       children = ['records']
       if @get('isScopedToCurrentUser')
         uid = Batman.currentApp.get('currentUser.uid')
         if !uid?
-          throw "#{@model.resourceName} is scoped to currentUser -- you must be logged in to access it!"
+          throw "#{firebaseClass} is scoped to currentUser -- you must be logged in to access it!"
         children.push('scoped')
         children.push(uid)
       children.push(firebaseClass)
       children.join("/")
 
-    @model::generateFirebasePath = ->
+    @model.accessor 'firebasePath', ->
       children = ['records']
       if @get('isScopedToCurrentUser')
-        uid = @get('created_by_uid')
+        uid = if @get('isNew')
+            Batman.currentApp.get('currentUser.uid')
+          else
+            @get('created_by_uid')
         if !uid?
-          throw "#{@constructor.resourceName} is scoped to currentUser -- you must be logged in to access it!"
+          debugger
+          console.log @toJSON()
+          throw "#{firebaseClass} #{@get("id") || 'record'} is scoped to currentUser -- you must be logged in to access them!"
         children.push('scoped')
         children.push(uid)
       children.push(firebaseClass)
+
       if !@isNew()
         children.push(@get('id'))
       children.join("/")
 
   _createRef: (env) ->
-    firebaseChildPath = env.subject.generateFirebasePath()
-    Batman.currentApp.get('firebase').child(firebaseChildPath)
+    try
+      firebaseChildPath = env.subject.get('firebasePath')
+      ref = Batman.currentApp.get('firebase').child(firebaseChildPath)
+    catch e
+      env.error = e
+    ref
 
-
-  _listenToList: (ref) ->
-    if !@model.get('ref')
+  _listenToList: (ref, callback) ->
+    if @model.get('ref')
+      callback?()
+    else
       ref.on 'child_added', (snapshot) =>
         record = @model.createFromJSON(snapshot.val())
       ref.on 'child_removed', (snapshot) =>
@@ -104,6 +115,7 @@ class BatFire.Storage extends Batman.StorageAdapter
       ref.on 'child_changed', (snapshot) =>
         record = @model.createFromJSON(snapshot.val())
       @model.set('ref', ref)
+
 
   @::before 'destroy', 'destroyAll', @skipIfError (env, next) ->
     if env.subject.get('hasUserOwnership')
@@ -136,7 +148,6 @@ class BatFire.Storage extends Batman.StorageAdapter
     env.firebaseRef.set env.subject.toJSON(), (err) ->
       if err
         env.error = err
-        console.log err
       next()
 
   read: @skipIfError (env, next) ->
@@ -164,7 +175,7 @@ class BatFire.Storage extends Batman.StorageAdapter
     @_listenToList(env.firebaseRef)
     next()
 
-  destroyAll:  @skipIfError (env, next) ->
+  destroyAll: @skipIfError (env, next) ->
     env.firebaseRef.remove (err) ->
       if err
         env.error = err
@@ -227,10 +238,11 @@ BatFire.AuthModelMixin =
           @accessor accessorName,
             get: ->
               @_currentUserAttrs ?= {}
-              @_currentUserAttrs[attr] ?= Batman.currentApp.get("currentUser.#{attr}")
+              @_currentUserAttrs[attr]
             set: (key, value) ->
               @_currentUserAttrs ?= {}
               @_currentUserAttrs[attr] = value
+          @::on 'enter creating', -> @set(accessorName, Batman.currentApp.get('currentUser').get(attr))
           @accessor Batman.helpers.camelize(accessorName), -> @get(accessorName)
           @encode accessorName
 

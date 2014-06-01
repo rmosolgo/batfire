@@ -118,27 +118,29 @@
         _this.model.unset('ref');
         return result;
       };
-      this.model.generateFirebasePath = function() {
+      this.model.classAccessor('firebasePath', function() {
         var children, uid;
         children = ['records'];
         if (this.get('isScopedToCurrentUser')) {
           uid = Batman.currentApp.get('currentUser.uid');
           if (uid == null) {
-            throw "" + this.model.resourceName + " is scoped to currentUser -- you must be logged in to access it!";
+            throw "" + firebaseClass + " is scoped to currentUser -- you must be logged in to access it!";
           }
           children.push('scoped');
           children.push(uid);
         }
         children.push(firebaseClass);
         return children.join("/");
-      };
-      this.model.prototype.generateFirebasePath = function() {
+      });
+      this.model.accessor('firebasePath', function() {
         var children, uid;
         children = ['records'];
         if (this.get('isScopedToCurrentUser')) {
-          uid = this.get('created_by_uid');
+          uid = this.get('isNew') ? Batman.currentApp.get('currentUser.uid') : this.get('created_by_uid');
           if (uid == null) {
-            throw "" + this.constructor.resourceName + " is scoped to currentUser -- you must be logged in to access it!";
+            debugger;
+            console.log(this.toJSON());
+            throw "" + firebaseClass + " " + (this.get("id") || 'record') + " is scoped to currentUser -- you must be logged in to access them!";
           }
           children.push('scoped');
           children.push(uid);
@@ -148,18 +150,26 @@
           children.push(this.get('id'));
         }
         return children.join("/");
-      };
+      });
     }
 
     Storage.prototype._createRef = function(env) {
-      var firebaseChildPath;
-      firebaseChildPath = env.subject.generateFirebasePath();
-      return Batman.currentApp.get('firebase').child(firebaseChildPath);
+      var e, firebaseChildPath, ref;
+      try {
+        firebaseChildPath = env.subject.get('firebasePath');
+        ref = Batman.currentApp.get('firebase').child(firebaseChildPath);
+      } catch (_error) {
+        e = _error;
+        env.error = e;
+      }
+      return ref;
     };
 
-    Storage.prototype._listenToList = function(ref) {
+    Storage.prototype._listenToList = function(ref, callback) {
       var _this = this;
-      if (!this.model.get('ref')) {
+      if (this.model.get('ref')) {
+        return typeof callback === "function" ? callback() : void 0;
+      } else {
         ref.on('child_added', function(snapshot) {
           var record;
           return record = _this.model.createFromJSON(snapshot.val());
@@ -220,7 +230,6 @@
       return env.firebaseRef.set(env.subject.toJSON(), function(err) {
         if (err) {
           env.error = err;
-          console.log(err);
         }
         return next();
       });
@@ -391,11 +400,10 @@
           accessorName = "created_by_" + attr;
           _this.accessor(accessorName, {
             get: function() {
-              var _base;
               if (this._currentUserAttrs == null) {
                 this._currentUserAttrs = {};
               }
-              return (_base = this._currentUserAttrs)[attr] != null ? (_base = this._currentUserAttrs)[attr] : _base[attr] = Batman.currentApp.get("currentUser." + attr);
+              return this._currentUserAttrs[attr];
             },
             set: function(key, value) {
               if (this._currentUserAttrs == null) {
@@ -403,6 +411,9 @@
               }
               return this._currentUserAttrs[attr] = value;
             }
+          });
+          _this.prototype.on('enter creating', function() {
+            return this.set(accessorName, Batman.currentApp.get('currentUser').get(attr));
           });
           _this.accessor(Batman.helpers.camelize(accessorName), function() {
             return this.get(accessorName);

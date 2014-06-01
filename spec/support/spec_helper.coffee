@@ -15,12 +15,12 @@ class TestApp.TestModel extends Batman.Model
         callback?(err, records, env)
 
 class TestApp.SafeModel extends TestApp.TestModel
-  @storageKey: 'safe_model'
+  @resourceName: 'safe_model'
   @belongsToCurrentUser ownership: true
   @persist BatFire.Storage
 
 class TestApp.ScopedModel extends TestApp.TestModel
-  @storageKey: 'scoped_model'
+  @resourceName: 'scoped_model'
   @belongsToCurrentUser scoped: true
   @persist BatFire.Storage
 
