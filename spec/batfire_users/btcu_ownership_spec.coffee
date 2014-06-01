@@ -44,6 +44,7 @@ describe 'Model.belongsToCurrentUser', ->
           smId = record.get('id')
           TestApp.SafeModel.clear()
           TestApp.SafeModel.find smId, (err, record) ->
+            throw err if err?
             foundRecord = record
 
       waitsFor (-> foundRecord?), "Record is saved then found"

@@ -88,7 +88,11 @@ class BatFire.Storage extends Batman.StorageAdapter
 
   create: @skipIfError (env, next) ->
     firebaseId = env.firebaseRef.name()
-    env.subject._withoutDirtyTracking -> @set(env.primaryKey, firebaseId)
+    env.subject._withoutDirtyTracking ->
+      if env.subject.get('_belongsToCurrentUser')
+        for attr in BatFire.AuthModelMixin.CREATED_BY_FIELDS
+          @set("created_by_#{attr}", Batman.currentApp.get('currentUser').get(attr))
+      @set(env.primaryKey, firebaseId)
     env.firebaseRef.set env.subject.toJSON(), (err) ->
       if err
         env.error = err
