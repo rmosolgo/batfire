@@ -38,7 +38,8 @@ describe 'Model.belongsToCurrentUser', ->
       runs ->
         expect(TestApp.ScopedModel.get('firebasePath')).toEqual("records/scoped/54321/scoped_models")
         expect(TestApp.ScopedModel.get('all.length')).toEqual(0)
-        sm.destroy()
+        sm.destroy (err, record) ->
+          throw err if err?
 
     it "clears the loaded set on logout", ->
       ready = false
@@ -58,4 +59,5 @@ describe 'Model.belongsToCurrentUser', ->
 
       runs ->
         expect(TestApp.ScopedModel.get('all.length')).toEqual(0)
-        sm.destroy()
+        sm.destroy (err, record) ->
+          throw err if err?

@@ -2,7 +2,7 @@
 class BatFire.Storage extends Batman.StorageAdapter
   constructor: ->
     super
-    @firebaseClass = firebaseClass = Batman.helpers.pluralize(@model.storageKey || @model.resourceName)
+    firebaseClass = Batman.helpers.pluralize(@model.storageKey || @model.resourceName)
     @model.encode(@model.get('primaryKey'))
 
     _BatFireClearLoaded = @model.clear
@@ -47,22 +47,22 @@ class BatFire.Storage extends Batman.StorageAdapter
     try
       firebaseChildPath = env.subject.get('firebasePath')
       ref = Batman.currentApp.get('firebase').child(firebaseChildPath)
+      if env.action is 'create'
+        ref = ref.push()
     catch e
       env.error = e
     ref
 
   _listenToList: (ref, callback) ->
-    if @model.get('ref')
-      callback?()
-    else
-      ref.on 'child_added', (snapshot) =>
-        record = @model.createFromJSON(snapshot.val())
-      ref.on 'child_removed', (snapshot) =>
-        record = @model.createFromJSON(snapshot.val())
-        @model.get('loaded').remove(record)
-      ref.on 'child_changed', (snapshot) =>
-        record = @model.createFromJSON(snapshot.val())
-      @model.set('ref', ref)
+    return if @model.get('ref')
+    ref.on 'child_added', (snapshot) =>
+      record = @model.createFromJSON(snapshot.val())
+    ref.on 'child_removed', (snapshot) =>
+      record = @model.createFromJSON(snapshot.val())
+      @model.get('loaded').remove(record)
+    ref.on 'child_changed', (snapshot) =>
+      record = @model.createFromJSON(snapshot.val())
+    @model.set('ref', ref)
 
 
   @::before 'destroy', 'destroyAll', @skipIfError (env, next) ->
@@ -75,11 +75,7 @@ class BatFire.Storage extends Batman.StorageAdapter
 
   @::before 'create', 'update', 'read', 'destroy', 'readAll', 'destroyAll', @skipIfError (env, next) ->
     env.primaryKey = @model.primaryKey
-    ref = @_createRef(env)
-    if env.action is 'create'
-      env.firebaseRef = ref.push()
-    else
-      env.firebaseRef = ref
+    env.firebaseRef = @_createRef(env)
     next()
 
   @::after 'create', 'update', 'read', 'destroy', @skipIfError (env, next) ->
