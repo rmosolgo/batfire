@@ -105,7 +105,7 @@
       var firebaseClass, _BatFireClearLoaded,
         _this = this;
       Storage.__super__.constructor.apply(this, arguments);
-      this.firebaseClass = firebaseClass = Batman.helpers.pluralize(this.model.storageKey || this.model.resourceName);
+      firebaseClass = Batman.helpers.pluralize(this.model.storageKey || this.model.resourceName);
       this.model.encode(this.model.get('primaryKey'));
       _BatFireClearLoaded = this.model.clear;
       this.model.clear = function() {
@@ -158,6 +158,9 @@
       try {
         firebaseChildPath = env.subject.get('firebasePath');
         ref = Batman.currentApp.get('firebase').child(firebaseChildPath);
+        if (env.action === 'create') {
+          ref = ref.push();
+        }
       } catch (_error) {
         e = _error;
         env.error = e;
@@ -168,23 +171,22 @@
     Storage.prototype._listenToList = function(ref, callback) {
       var _this = this;
       if (this.model.get('ref')) {
-        return typeof callback === "function" ? callback() : void 0;
-      } else {
-        ref.on('child_added', function(snapshot) {
-          var record;
-          return record = _this.model.createFromJSON(snapshot.val());
-        });
-        ref.on('child_removed', function(snapshot) {
-          var record;
-          record = _this.model.createFromJSON(snapshot.val());
-          return _this.model.get('loaded').remove(record);
-        });
-        ref.on('child_changed', function(snapshot) {
-          var record;
-          return record = _this.model.createFromJSON(snapshot.val());
-        });
-        return this.model.set('ref', ref);
+        return;
       }
+      ref.on('child_added', function(snapshot) {
+        var record;
+        return record = _this.model.createFromJSON(snapshot.val());
+      });
+      ref.on('child_removed', function(snapshot) {
+        var record;
+        record = _this.model.createFromJSON(snapshot.val());
+        return _this.model.get('loaded').remove(record);
+      });
+      ref.on('child_changed', function(snapshot) {
+        var record;
+        return record = _this.model.createFromJSON(snapshot.val());
+      });
+      return this.model.set('ref', ref);
     };
 
     Storage.prototype.before('destroy', 'destroyAll', Storage.skipIfError(function(env, next) {
@@ -200,14 +202,8 @@
     }));
 
     Storage.prototype.before('create', 'update', 'read', 'destroy', 'readAll', 'destroyAll', Storage.skipIfError(function(env, next) {
-      var ref;
       env.primaryKey = this.model.primaryKey;
-      ref = this._createRef(env);
-      if (env.action === 'create') {
-        env.firebaseRef = ref.push();
-      } else {
-        env.firebaseRef = ref;
-      }
+      env.firebaseRef = this._createRef(env);
       return next();
     }));
 
