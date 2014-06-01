@@ -140,7 +140,11 @@ class BatFire.Storage extends Batman.StorageAdapter
 
   create: @skipIfError (env, next) ->
     firebaseId = env.firebaseRef.name()
-    env.subject._withoutDirtyTracking -> @set(env.primaryKey, firebaseId)
+    env.subject._withoutDirtyTracking ->
+      if env.subject.get('_belongsToCurrentUser')
+        for attr in BatFire.AuthModelMixin.CREATED_BY_FIELDS
+          @set("created_by_#{attr}", Batman.currentApp.get('currentUser').get(attr))
+      @set(env.primaryKey, firebaseId)
     env.firebaseRef.set env.subject.toJSON(), (err) ->
       if err
         env.error = err
@@ -216,40 +220,41 @@ class BatFire.CurrentUserValidator extends Batman.Validator
   @triggers 'ownedByCurrentUser'
 
   validateEach: (errors, record, key, callback) ->
-    if !record.isNew() # only validates existing records
+    if !record.get('isNew') # these are only set after create
       if !record.get('hasOwner')
-        errors.add('created_by_uid', "This record doesn't have an owner!")
+        errors.add('base', "This record doesn't have an owner!")
       else if !record.get('isOwnedByCurrentUser')
-        errors.add('created_by_uid', "You don't own this record!")
+        errors.add('base', "You don't own this record!")
+    else
+      if !Batman.currentApp.get('currentUser')?
+        errors.add('base', "You must be logged in to create this!")
     callback()
 
 Batman.Validators.push(BatFire.CurrentUserValidator)
 
 BatFire.AuthModelMixin =
+  CREATED_BY_FIELDS: ['uid', 'email', 'username']
+
   initialize: ->
     @belongsToCurrentUser = ({scoped, ownership}={})->
-      for attr in ['uid', 'email', 'username']
+      for attr in BatFire.AuthModelMixin.CREATED_BY_FIELDS
         do (attr) =>
           accessorName = "created_by_#{attr}"
-          @accessor accessorName,
-            get: ->
-              @_currentUserAttrs ?= {}
-              @_currentUserAttrs[attr]
-            set: (key, value) ->
-              @_currentUserAttrs ?= {}
-              @_currentUserAttrs[attr] = value
-          @::on 'enter creating', -> @set(accessorName, Batman.currentApp.get('currentUser').get(attr))
-          @accessor Batman.helpers.camelize(accessorName), -> @get(accessorName)
-          @encode accessorName
+          @accessor(accessorName, Batman.Model.defaultAccessor) # uses default accessor
+          @encode(accessorName)
 
       @accessor 'hasOwner', -> @get('created_by_uid')?
       @accessor 'isOwnedByCurrentUser', ->
-        @get('created_by_uid') and @get('created_by_uid') is Batman.currentApp.get('currentUser.uid')
+        @get('hasOwner') and @get('created_by_uid') is Batman.currentApp.get('currentUser.uid')
+
+      # used by the storage adapter:
+      @set('_belongsToCurrentUser', true)
+      @accessor('_belongsToCurrentUser', -> true)
 
       if ownership
         @validate('created_by_uid',{ownedByCurrentUser: true})
         @set('hasUserOwnership', true) # picked up in the storage adapter
-        @accessor 'hasUserOwnership', -> @constructor.get('hasUserOwnership') # picked up in the storage adapter
+        @accessor 'hasUserOwnership', -> true # picked up in the storage adapter
         @encode('hasUserOwnership', as: 'has_user_ownership')
 
       if scoped

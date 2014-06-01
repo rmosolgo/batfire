@@ -221,6 +221,14 @@
       var firebaseId;
       firebaseId = env.firebaseRef.name();
       env.subject._withoutDirtyTracking(function() {
+        var attr, _i, _len, _ref;
+        if (env.subject.get('_belongsToCurrentUser')) {
+          _ref = BatFire.AuthModelMixin.CREATED_BY_FIELDS;
+          for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+            attr = _ref[_i];
+            this.set("created_by_" + attr, Batman.currentApp.get('currentUser').get(attr));
+          }
+        }
         return this.set(env.primaryKey, firebaseId);
       });
       return env.firebaseRef.set(env.subject.toJSON(), function(err) {
@@ -368,11 +376,15 @@
     CurrentUserValidator.triggers('ownedByCurrentUser');
 
     CurrentUserValidator.prototype.validateEach = function(errors, record, key, callback) {
-      if (!record.isNew()) {
+      if (!record.get('isNew')) {
         if (!record.get('hasOwner')) {
-          errors.add('created_by_uid', "This record doesn't have an owner!");
+          errors.add('base', "This record doesn't have an owner!");
         } else if (!record.get('isOwnedByCurrentUser')) {
-          errors.add('created_by_uid', "You don't own this record!");
+          errors.add('base', "You don't own this record!");
+        }
+      } else {
+        if (Batman.currentApp.get('currentUser') == null) {
+          errors.add('base', "You must be logged in to create this!");
         }
       }
       return callback();
@@ -385,35 +397,17 @@
   Batman.Validators.push(BatFire.CurrentUserValidator);
 
   BatFire.AuthModelMixin = {
+    CREATED_BY_FIELDS: ['uid', 'email', 'username'],
     initialize: function() {
       return this.belongsToCurrentUser = function(_arg) {
         var attr, ownership, scoped, _fn, _i, _len, _ref2, _ref3,
           _this = this;
         _ref2 = _arg != null ? _arg : {}, scoped = _ref2.scoped, ownership = _ref2.ownership;
-        _ref3 = ['uid', 'email', 'username'];
+        _ref3 = BatFire.AuthModelMixin.CREATED_BY_FIELDS;
         _fn = function(attr) {
           var accessorName;
           accessorName = "created_by_" + attr;
-          _this.accessor(accessorName, {
-            get: function() {
-              if (this._currentUserAttrs == null) {
-                this._currentUserAttrs = {};
-              }
-              return this._currentUserAttrs[attr];
-            },
-            set: function(key, value) {
-              if (this._currentUserAttrs == null) {
-                this._currentUserAttrs = {};
-              }
-              return this._currentUserAttrs[attr] = value;
-            }
-          });
-          _this.prototype.on('enter creating', function() {
-            return this.set(accessorName, Batman.currentApp.get('currentUser').get(attr));
-          });
-          _this.accessor(Batman.helpers.camelize(accessorName), function() {
-            return this.get(accessorName);
-          });
+          _this.accessor(accessorName, Batman.Model.defaultAccessor);
           return _this.encode(accessorName);
         };
         for (_i = 0, _len = _ref3.length; _i < _len; _i++) {
@@ -424,7 +418,11 @@
           return this.get('created_by_uid') != null;
         });
         this.accessor('isOwnedByCurrentUser', function() {
-          return this.get('created_by_uid') && this.get('created_by_uid') === Batman.currentApp.get('currentUser.uid');
+          return this.get('hasOwner') && this.get('created_by_uid') === Batman.currentApp.get('currentUser.uid');
+        });
+        this.set('_belongsToCurrentUser', true);
+        this.accessor('_belongsToCurrentUser', function() {
+          return true;
         });
         if (ownership) {
           this.validate('created_by_uid', {
@@ -432,7 +430,7 @@
           });
           this.set('hasUserOwnership', true);
           this.accessor('hasUserOwnership', function() {
-            return this.constructor.get('hasUserOwnership');
+            return true;
           });
           this.encode('hasUserOwnership', {
             as: 'has_user_ownership'
