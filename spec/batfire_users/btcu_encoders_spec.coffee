@@ -4,6 +4,8 @@ describe 'Model.belongsToCurrentUser', ->
     TestApp._updateCurrentUser({username: "richard_nixon", email: "rnixon@presidency.gov", uid: "12345"})
     TestApp.TestModel.belongsToCurrentUser()
 
+  afterEach -> TestApp.TestModel.destroyAll()
+
   describe 'model attributes', ->
     it "on create, stores currentUser uid, username, email on the record", ->
       t = new TestApp.TestModel

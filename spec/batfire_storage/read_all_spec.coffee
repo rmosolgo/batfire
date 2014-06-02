@@ -1,8 +1,10 @@
 describe 'readAll', ->
-  beforeEach -> ensureRunning()
+  beforeEach ->
+    ensureRunning()
+    TestApp.TestModel.clear()
   afterEach -> TestApp.TestModel.destroyAll()
 
-  it 'returns all records', ->
+  it 'returns all records and passes the array to the callback', ->
     spyOn(BatFire.Storage.prototype, 'readAll').andCallThrough()
     saved = false
     error = null
@@ -19,6 +21,8 @@ describe 'readAll', ->
           TestApp.TestModel.clear()
           TestApp.TestModel.load (e, rs) =>
             error ||= e
+            throw error if error?
+            expect(rs.length).toEqual(2)
             saved = true
 
     waitsFor (=> TestApp.TestModel.get('loaded.length') == 2), "Record should be saved",5000
@@ -38,7 +42,7 @@ describe 'readAll', ->
       id = childRef.name()
       childRef.set({id: id, name: "Cyclone", type: "Ferret"}, -> ready = true)
 
-    waitsFor -> ready
+    waitsFor -> TestApp.TestModel.get('loaded.length') == 1
 
     runs ->
       expect(TestApp.TestModel.get('loaded.length')).toEqual(1)
@@ -46,6 +50,7 @@ describe 'readAll', ->
   it 'listens for child_removed', ->
     id = null
     ready = false
+    TestApp.TestModel.load()
 
     runs ->
       loki = new TestApp.TestModel({name: "Max", type: "Ferret"})
@@ -66,6 +71,7 @@ describe 'readAll', ->
   it 'listens for child_changed', ->
     id = null
     ready = false
+    TestApp.TestModel.load()
 
     runs ->
       loki = new TestApp.TestModel({name: "Max", type: "Ferret"})

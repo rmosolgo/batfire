@@ -100,7 +100,6 @@ __Notes about `BatFire.Storage`:__
 
 - `BatFire.Storage` will automatically set your model to `@encode` its `primaryKey`
 - You can listen to _all_ records by calling `Model.load()`. This sets up handlers for `child_added`, `child_removed`, and `child_changed`. Calling `Model.clear()` empties the loaded set and stops listening.
-- `Model.load` doesn't return all records! Firebase just doesn't work like that. It does set up a Firebase listener to populate the `loaded` set, though.
 
 # App.syncs
 

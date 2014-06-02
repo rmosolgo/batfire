@@ -226,7 +226,7 @@ class BatFire.CurrentUserValidator extends Batman.Validator
       else if !record.get('isOwnedByCurrentUser')
         errors.add('base', "You don't own this record!")
     else
-      if !Batman.currentApp.get('currentUser')?
+      if !Batman.currentApp.get('loggedIn')
         errors.add('base', "You must be logged in to create this!")
     callback()
 

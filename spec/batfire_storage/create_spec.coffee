@@ -1,4 +1,6 @@
 describe 'create', ->
+  afterEach -> TestApp.TestModel.destroyAll()
+
   it 'creates new records', ->
     spyOn(BatFire.Storage.prototype, 'create').andCallThrough()
     record = newTestRecord(name: "created record")
@@ -18,5 +20,4 @@ describe 'create', ->
       expect(BatFire.Storage::create).toHaveBeenCalled()
       expect(@error).toBeFalsy()
       expect(@savedRecord.get('name')).toEqual('created record')
-      record.destroy()
 

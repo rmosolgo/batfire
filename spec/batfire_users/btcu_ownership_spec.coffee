@@ -3,6 +3,7 @@ describe 'Model.belongsToCurrentUser', ->
     ensureRunning()
     TestApp._updateCurrentUser({username: "richard_nixon", email: "rnixon@presidency.gov", uid: "12345"})
 
+  afterEach -> TestApp.SafeModel.destroyAll()
   describe 'ownership: true', ->
     it "throws error if record creator isn't currentUser", ->
       sm = new TestApp.SafeModel

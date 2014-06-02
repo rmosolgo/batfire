@@ -4,6 +4,8 @@ describe 'Model.belongsToCurrentUser', ->
     TestApp._updateCurrentUser({username: "richard_nixon", email: "rnixon@presidency.gov", uid: "12345"})
     TestApp.ScopedModel.get('all') # I'm puzzled, but for some reason this has to be here or else Model.all.length gets out of whack (even though the Set has the right members)
 
+  afterEach -> TestApp.ScopedModel.destroyAll()
+
   describe 'scope: true', ->
     it 'prefixes the storageUrl', ->
       modelPath = TestApp.ScopedModel.get('firebasePath')

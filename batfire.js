@@ -383,7 +383,7 @@
           errors.add('base', "You don't own this record!");
         }
       } else {
-        if (Batman.currentApp.get('currentUser') == null) {
+        if (!Batman.currentApp.get('loggedIn')) {
           errors.add('base', "You must be logged in to create this!");
         }
       }
