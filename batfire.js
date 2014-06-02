@@ -212,11 +212,6 @@
       return next();
     }));
 
-    Storage.prototype.after('readAll', Storage.skipIfError(function(env, next) {
-      env.result = [];
-      return next();
-    }));
-
     Storage.prototype.create = Storage.skipIfError(function(env, next) {
       var firebaseId;
       firebaseId = env.firebaseRef.name();
@@ -274,8 +269,22 @@
     });
 
     Storage.prototype.readAll = Storage.skipIfError(function(env, next) {
+      var _this = this;
       this._listenToList(env.firebaseRef);
-      return next();
+      return env.firebaseRef.once('value', function(listSnapshot) {
+        var id, item, listData;
+        listData = listSnapshot.val();
+        env.result = (function() {
+          var _results;
+          _results = [];
+          for (id in listData) {
+            item = listData[id];
+            _results.push(env.subject.createFromJSON(item));
+          }
+          return _results;
+        })();
+        return next();
+      });
     });
 
     Storage.prototype.destroyAll = Storage.skipIfError(function(env, next) {

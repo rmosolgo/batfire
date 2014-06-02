@@ -134,10 +134,6 @@ class BatFire.Storage extends Batman.StorageAdapter
     env.result = env.subject
     next()
 
-  @::after 'readAll', @skipIfError (env, next) ->
-    env.result = []
-    next()
-
   create: @skipIfError (env, next) ->
     firebaseId = env.firebaseRef.name()
     env.subject._withoutDirtyTracking ->
@@ -173,7 +169,10 @@ class BatFire.Storage extends Batman.StorageAdapter
 
   readAll: @skipIfError (env, next) ->
     @_listenToList(env.firebaseRef)
-    next()
+    env.firebaseRef.once 'value', (listSnapshot) =>
+      listData = listSnapshot.val()
+      env.result = (env.subject.createFromJSON(item) for id, item of listData)
+      next()
 
   destroyAll: @skipIfError (env, next) ->
     env.firebaseRef.remove (err) ->
