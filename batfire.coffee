@@ -84,8 +84,6 @@ class BatFire.Storage extends Batman.StorageAdapter
           else
             @get('created_by_uid')
         if !uid?
-          debugger
-          console.log @toJSON()
           throw "#{firebaseClass} #{@get("id") || 'record'} is scoped to currentUser -- you must be logged in to access them!"
         children.push('scoped')
         children.push(uid)
@@ -94,6 +92,13 @@ class BatFire.Storage extends Batman.StorageAdapter
       if !@isNew()
         children.push(@get('id'))
       children.join("/")
+
+    @model.encodesTimestamps = ->
+      @accessor('_encodesTimestamps', -> true)
+      @encode('created_at', 'updated_at', {
+        encode: (value) -> value.toISOString()
+        decode: (value) -> new Date(value)
+        })
 
   _createRef: (env) ->
     try
@@ -137,6 +142,9 @@ class BatFire.Storage extends Batman.StorageAdapter
   create: @skipIfError (env, next) ->
     firebaseId = env.firebaseRef.name()
     env.subject._withoutDirtyTracking ->
+      if env.subject.get('_encodesTimestamps')
+        @set('created_at', new Date)
+        @set('updated_at', new Date)
       if env.subject.get('_belongsToCurrentUser')
         for attr in BatFire.AuthModelMixin.CREATED_BY_FIELDS
           @set("created_by_#{attr}", Batman.currentApp.get('currentUser').get(attr))
@@ -156,6 +164,9 @@ class BatFire.Storage extends Batman.StorageAdapter
       next()
 
   update: @skipIfError (env, next) ->
+    env.subject._withoutDirtyTracking ->
+      if env.subject.get('_encodesTimestamps')
+        @set('updated_at', new Date)
     env.firebaseRef.set env.subject.toJSON(), (err) ->
       if err
         env.error = err

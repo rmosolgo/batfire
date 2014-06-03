@@ -138,8 +138,6 @@
         if (this.get('isScopedToCurrentUser')) {
           uid = this.get('isNew') ? Batman.currentApp.get('currentUser.uid') : this.get('created_by_uid');
           if (uid == null) {
-            debugger;
-            console.log(this.toJSON());
             throw "" + firebaseClass + " " + (this.get("id") || 'record') + " is scoped to currentUser -- you must be logged in to access them!";
           }
           children.push('scoped');
@@ -151,6 +149,19 @@
         }
         return children.join("/");
       });
+      this.model.encodesTimestamps = function() {
+        this.accessor('_encodesTimestamps', function() {
+          return true;
+        });
+        return this.encode('created_at', 'updated_at', {
+          encode: function(value) {
+            return value.toISOString();
+          },
+          decode: function(value) {
+            return new Date(value);
+          }
+        });
+      };
     }
 
     Storage.prototype._createRef = function(env) {
@@ -217,6 +228,10 @@
       firebaseId = env.firebaseRef.name();
       env.subject._withoutDirtyTracking(function() {
         var attr, _i, _len, _ref;
+        if (env.subject.get('_encodesTimestamps')) {
+          this.set('created_at', new Date);
+          this.set('updated_at', new Date);
+        }
         if (env.subject.get('_belongsToCurrentUser')) {
           _ref = BatFire.AuthModelMixin.CREATED_BY_FIELDS;
           for (_i = 0, _len = _ref.length; _i < _len; _i++) {
@@ -251,6 +266,11 @@
     });
 
     Storage.prototype.update = Storage.skipIfError(function(env, next) {
+      env.subject._withoutDirtyTracking(function() {
+        if (env.subject.get('_encodesTimestamps')) {
+          return this.set('updated_at', new Date);
+        }
+      });
       return env.firebaseRef.set(env.subject.toJSON(), function(err) {
         if (err) {
           env.error = err;
