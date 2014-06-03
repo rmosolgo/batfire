@@ -67,6 +67,7 @@ class App.Sandwich extends Batman.Model
   @resourceName: 'sandwich'
   @persist BatFire.Storage
   @encode "meats", "tomato", "lettuce" # @primaryKey will be encoded automatically
+  @encodesTimestamps() # added by BatFire.Storage
 ```
 
 Now, all the storage operations of your records will trigger updates on Firebase:
@@ -99,6 +100,7 @@ By the way, all model data URLs are prefixed with `BatFire/records`.
 __Notes about `BatFire.Storage`:__
 
 - `BatFire.Storage` will automatically set your model to `@encode` its `primaryKey`
+- `@encodesTimestamps()` will encode `created_at` and `updated_at` as ISO strings in the model's JSON.
 - You can listen to _all_ records by calling `Model.load()`. This sets up handlers for `child_added`, `child_removed`, and `child_changed`. Calling `Model.clear()` empties the loaded set and stops listening.
 
 # App.syncs
@@ -213,7 +215,6 @@ The __`scoped: true`__ option:
 # To do
 
 - Allow custom function for generating IDs
-- add `Model.encodesTimestamps` for updatedAt and createdAt and implement it on the storage adapter
 - shorthand `App.syncsWithFirebase(key, {authorizes: authArguments})`
 
 # Development

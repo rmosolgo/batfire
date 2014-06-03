@@ -24,6 +24,10 @@ class TestApp.ScopedModel extends TestApp.TestModel
   @belongsToCurrentUser scoped: true
   @persist BatFire.Storage
 
+class TestApp.TimestampModel extends TestApp.TestModel
+  @resourceName: 'timestamp_model'
+  @persist BatFire.Storage
+  @encodesTimestamps()
 
 @notImplemented = ->
   console.warn "Not Implemented"
