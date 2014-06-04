@@ -3,11 +3,14 @@
   "rules": {
     /* All items are namespaced by `BatFire` */
     "BatFire" : {
+      ".write" : "'my_auth_uid' == auth.uid", /* add your auth.uid for top-level admin write permission */
+
       /* Make `@syncs` accessors read-only */
       "syncs" : {
         ".read" : true,
         ".write" : false
       },
+
       /* All records namespaced by `records` */
       "records" : {
         "scoped" : {
@@ -17,6 +20,7 @@
             ".read" : "$uid == auth.uid"
           }
         },
+
         "$resourceName" : {
           /* "Server-side" validation for @belongsToCurrentUser(ownership: true) */
           "$recordId" : {
@@ -28,6 +32,7 @@
         }
       }
     },
+
     /* Everything else is fair game */
     "$other" : {
       ".read" : true,
