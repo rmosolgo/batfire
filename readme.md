@@ -13,7 +13,13 @@ Also see [example security rules](https://github.com/rmosolgo/batfire/blob/maste
 
 - __Get the files:__
 
-  Download BatFire in a form of your choice:
+  Install with Bower:
+
+  ```
+  bower install batfire
+  ```
+
+  Or, download BatFire in a form of your choice:
 
   - [CoffeeScript](https://raw.github.com/rmosolgo/batfire/master/batfire.coffee)
   - [JavaScript](https://raw.github.com/rmosolgo/batfire/master/batfire.js)
