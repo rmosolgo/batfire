@@ -1,7 +1,7 @@
 {
   "name": "Batfire",
   "main": "[\"batfire.js\", \"batfire.min.js\", \"batfire.coffee\"]",
-  "version": "0.0.1",
+  "version": "0.1.1",
   "homepage": "https://github.com/rmosolgo/batfire",
   "authors": [
     "Robert Mosolgo <rdmosolgo@gmail.com>"
@@ -17,10 +17,9 @@
   ],
   "license": "MIT",
   "ignore": [
-    "**/.*",
     "node_modules",
     "bower_components",
-    "test",
-    "tests"
+    "examples",
+    "app"
   ]
 }

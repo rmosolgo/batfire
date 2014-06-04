@@ -7,7 +7,7 @@ BatFire is a [Firebase](https://www.firebase.com/) client library for [batman.js
 - A simple [wrapper around Firebase authentication](#appauthorizeswithfirebase)
 - Client-side pseudo-access control with [`Model.belongsToCurrentUser`](#modelbelongstocurrentuser)
 
-Also see [example security rules](https://github.com/rmosolgo/batfire/blob/master/examples/security_rules.json) and the [Jasmine spec suite](https://github.com/rmosolgo/batfire/tree/master/spec).
+Also see [example security rules](https://github.com/rmosolgo/batfire/blob/master/examples/security_rules.json), the [Jasmine spec suite](https://github.com/rmosolgo/batfire/tree/master/spec) or an [example app](http://github.com/rmosolgo/batmanjs-blog).
 
 # Usage
 
