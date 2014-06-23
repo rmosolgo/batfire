@@ -1,7 +1,8 @@
 describe 'read', ->
   afterEach -> TestApp.TestModel.destroyAll()
   it 'returns saved record', ->
-    spyOn(BatFire.Storage.prototype, 'read').andCallThrough()
+    readSpy = spyOn(TestApp.TestModel.storageAdapter(), 'read').andCallThrough()
+
     record = newTestRecord()
     @saved = false
     @savedRecord = null
@@ -20,5 +21,6 @@ describe 'read', ->
     waitsFor (=> @saved), "Record should be saved"
 
     runs =>
+      expect(readSpy).toHaveBeenCalled()
       expect(@error).toBeFalsy()
       expect(@savedRecord.get('name')).toEqual('new record')

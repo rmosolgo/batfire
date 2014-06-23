@@ -35,7 +35,7 @@ describe 'BatFire.Storage.ModelMixin', ->
 
       runs =>
         expect(@createdAt.substr(0,20)).toEqual(@actualCreatedAt.substr(0,20))
-        expect(@updatedAt).toEqual(@createdAt)
+        expect(@updatedAt.substr(0,22)).toEqual(@createdAt.substr(0,22))
 
     it 'on update, sets updated_at to ISO string but doesnt change created_at', ->
       tm = new TestApp.TimestampModel
@@ -59,4 +59,4 @@ describe 'BatFire.Storage.ModelMixin', ->
       runs =>
         expect(@createdAt.substr(0,20)).toEqual(@actualCreatedAt.substr(0,20))
         expect(@updatedAt).not.toEqual(@laterUpdatedAt)
-        expect(@createdAt).toEqual(@laterCreatedAt)
+        expect(@createdAt.substr(0,22)).toEqual(@laterCreatedAt.substr(0,22))

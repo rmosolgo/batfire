@@ -1,8 +1,10 @@
 describe 'create', ->
-  afterEach -> TestApp.TestModel.destroyAll()
+  afterEach ->
+    TestApp.TestModel.destroyAll()
+    TestApp.PrioritizedModel.destroyAll()
 
   it 'creates new records', ->
-    spyOn(BatFire.Storage.prototype, 'create').andCallThrough()
+    createSpy = spyOn(TestApp.TestModel.storageAdapter(), 'create').andCallThrough()
     record = newTestRecord(name: "created record")
     @saved = false
     @savedRecord = null
@@ -17,7 +19,9 @@ describe 'create', ->
     waitsFor (=> @saved), "Record should be saved"
 
     runs =>
-      expect(BatFire.Storage::create).toHaveBeenCalled()
+      expect(createSpy).toHaveBeenCalled()
       expect(@error).toBeFalsy()
       expect(@savedRecord.get('name')).toEqual('created record')
+
+
 

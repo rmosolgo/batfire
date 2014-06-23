@@ -9,10 +9,6 @@ class TestApp.TestModel extends Batman.Model
   @resourceName: 'test_model'
   @persist BatFire.Storage
   @encode 'name', 'type'
-  @destroyAll: (callback) ->
-    options = undefined
-    @_doStorageOperation 'destroyAll', options, (err, records, env) =>
-        callback?(err, records, env)
 
 class TestApp.SafeModel extends TestApp.TestModel
   @resourceName: 'safe_model'
@@ -28,6 +24,12 @@ class TestApp.TimestampModel extends TestApp.TestModel
   @resourceName: 'timestamp_model'
   @persist BatFire.Storage
   @encodesTimestamps()
+
+class TestApp.PrioritizedModel extends TestApp.TestModel
+  @resourceName: 'prioritized_model'
+  @persist BatFire.Storage
+  @encode 'name'
+  @prioritizedBy('name')
 
 @notImplemented = ->
   console.warn "Not Implemented"

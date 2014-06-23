@@ -2,16 +2,16 @@ describe 'readAll', ->
   beforeEach ->
     ensureRunning()
     TestApp.TestModel.clear()
+
   afterEach -> TestApp.TestModel.destroyAll()
 
   it 'returns all records and passes the array to the callback', ->
-    spyOn(BatFire.Storage.prototype, 'readAll').andCallThrough()
+    readAllSpy = spyOn(TestApp.TestModel.storageAdapter(), 'readAll').andCallThrough()
     saved = false
     error = null
     ids = []
 
     runs =>
-
       newTestRecord(name: "saved record").save (err, r) =>
         error ||= err
         ids.push r.get('id')
@@ -28,7 +28,7 @@ describe 'readAll', ->
     waitsFor (=> TestApp.TestModel.get('loaded.length') == 2), "Record should be saved",5000
 
     runs =>
-      expect(BatFire.Storage::readAll).toHaveBeenCalled()
+      expect(readAllSpy).toHaveBeenCalled()
       expect(error).toBeFalsy()
       expect(TestApp.TestModel.get('loaded.length')).toEqual(2)
 

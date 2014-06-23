@@ -2,7 +2,7 @@ describe 'update', ->
   afterEach -> TestApp.TestModel.destroyAll()
 
   it 'saves existing records', ->
-    spyOn(BatFire.Storage.prototype, 'update').andCallThrough()
+    updateSpy = spyOn(TestApp.TestModel.storageAdapter(), 'update').andCallThrough()
     record = newTestRecord('update record')
     @saved = false
     @savedRecord = null
@@ -26,5 +26,6 @@ describe 'update', ->
     waitsFor (=> @saved), "Record should be saved"
 
     runs =>
+      expect(updateSpy).toHaveBeenCalled()
       expect(@error).toBeFalsy()
       expect(@savedRecord.get('name')).toEqual('updated record name')

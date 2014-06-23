@@ -6,12 +6,16 @@ class BatFire.Storage extends Batman.StorageAdapter
     @model.encode(@model.get('primaryKey'))
 
     _BatFireClearLoaded = @model.clear
-    @model.clear = =>
-      result = _BatFireClearLoaded.apply(@model)
-      ref = @model.get('ref')
+    @model.clear = ->
+      result = _BatFireClearLoaded.apply(@)
+      ref = @get('ref')
       ref?.off()
-      @model.unset('ref')
+      @unset('ref')
       result
+
+    @model.destroyAll = (options={}) ->
+      @_doStorageOperation 'destroyAll', options, (err, records, env) ->
+        callback?(err, records, env)
 
     @model.classAccessor 'firebasePath', ->
       children = ['records']
@@ -48,6 +52,28 @@ class BatFire.Storage extends Batman.StorageAdapter
         decode: (value) -> new Date(value)
         })
 
+    @model.prioritizedBy = (accessorName) ->
+      @::_priority = -> @get(accessorName)
+      @_prioritized = true
+
+    @model.query = (options = {}, callback) ->
+      if !@_prioritized
+        throw new Error("#{@constructor.name} cant be queried until its priority is defined with `@prioritizedBy(attrName)`! ")
+      path = @get('firebasePath')
+      ref = Batman.currentApp.get('firebase').child(path)
+      for k, v of options
+        ref = ref[k](v)
+
+      success = (snapshot) =>
+        data = snapshot.val()
+        result = (@createFromJSON(item) for id, item of data)
+        callback(undefined, result)
+
+      failure = (err) ->
+        callback(err, undefined)
+
+      ref.once('value', success, failure)
+
   _createRef: (env) ->
     try
       firebaseChildPath = env.subject.get('firebasePath')
@@ -58,16 +84,15 @@ class BatFire.Storage extends Batman.StorageAdapter
       env.error = e
     ref
 
-  _listenToList: (ref, callback) ->
-    return if @model.get('ref')
+  _listenToList: (model, ref) ->
     ref.on 'child_added', (snapshot) =>
-      record = @model.createFromJSON(snapshot.val())
+      record = model.createFromJSON(snapshot.val())
     ref.on 'child_removed', (snapshot) =>
-      record = @model.createFromJSON(snapshot.val())
-      @model.get('loaded').remove(record)
+      record = model.createFromJSON(snapshot.val())
+      model.get('loaded').remove(record)
     ref.on 'child_changed', (snapshot) =>
-      record = @model.createFromJSON(snapshot.val())
-    @model.set('ref', ref)
+      record = model.createFromJSON(snapshot.val())
+    model.set('ref', ref)
 
 
   @::before 'destroy', 'destroyAll', @skipIfError (env, next) ->
@@ -87,6 +112,19 @@ class BatFire.Storage extends Batman.StorageAdapter
     env.result = env.subject
     next()
 
+  _setOnEnv: (env, next) ->
+    payload = env.subject.toJSON()
+    callback = (err) ->
+      if err
+        env.error = err
+      next()
+
+    if env.subject.constructor._prioritized
+      priority = env.subject._priority()
+      env.firebaseRef.setWithPriority(payload, priority, callback)
+    else
+      env.firebaseRef.set(payload, callback)
+
   create: @skipIfError (env, next) ->
     firebaseId = env.firebaseRef.name()
     env.subject._withoutDirtyTracking ->
@@ -97,10 +135,8 @@ class BatFire.Storage extends Batman.StorageAdapter
         for attr in BatFire.AuthModelMixin.CREATED_BY_FIELDS
           @set("created_by_#{attr}", Batman.currentApp.get('currentUser').get(attr))
       @set(env.primaryKey, firebaseId)
-    env.firebaseRef.set env.subject.toJSON(), (err) ->
-      if err
-        env.error = err
-      next()
+    @_setOnEnv(env, next)
+
 
   read: @skipIfError (env, next) ->
     env.firebaseRef.once 'value', (snapshot) =>
@@ -115,10 +151,7 @@ class BatFire.Storage extends Batman.StorageAdapter
     env.subject._withoutDirtyTracking ->
       if env.subject.get('_encodesTimestamps')
         @set('updated_at', new Date)
-    env.firebaseRef.set env.subject.toJSON(), (err) ->
-      if err
-        env.error = err
-      next()
+    @_setOnEnv(env, next)
 
   destroy: @skipIfError (env, next) ->
     env.firebaseRef.remove (err) ->
@@ -127,11 +160,15 @@ class BatFire.Storage extends Batman.StorageAdapter
       next()
 
   readAll: @skipIfError (env, next) ->
-    @_listenToList(env.firebaseRef)
-    env.firebaseRef.once 'value', (listSnapshot) =>
+    @_listenToList(env.subject, env.firebaseRef)
+    success = (listSnapshot) ->
       listData = listSnapshot.val()
       env.result = (env.subject.createFromJSON(item) for id, item of listData)
       next()
+    failure = (err) ->
+      env.error = err
+      next()
+    env.firebaseRef.once('value', success, failure)
 
   destroyAll: @skipIfError (env, next) ->
     env.firebaseRef.remove (err) ->
