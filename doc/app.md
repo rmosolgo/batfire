@@ -11,6 +11,13 @@ Topics:
 
 ### `@syncs(attrName, options={})`
 
+Binds keypaths on your app to Firebase so that updates are pushed to all clients.
+
+Option `as: "ConstructorName"` will cause the raw value to be passed to `new MyApp.ConstructorName(data)`. This way, you can save model instances.
+
+- Whatever you're syncing will be sent `toJSON` if it has a `toJSON` method, otherwise it will be sent to Firebase as-is.
+- If you don't [__secure__ the paths on Firebase](https://www.firebase.com/docs/security/security-rules.html) ([examples](https://github.com/rmosolgo/batfire/blob/master/examples/security_rules.json)], a malevolent user could update these properties via the console and screw everything up!
+
 ### `App.get('firebase')`
 
 ## Authorization

@@ -4,7 +4,7 @@ BatFire is a [Firebase](https://www.firebase.com/) client library for [batman.js
 
 - A storage adapter, [`BatFire.Storage`](#batfirestorage), for saving your records and updating clients in real time
 - App-wide, real-time-syncing accessors with [`@syncs`](#appsyncs)
-- A simple [wrapper around Firebase authentication](#appauthorizeswithfirebase)
+- A simple [wrapper around Firebase authentication](#authorization)
 - Client-side pseudo-access control with [`Model.belongsToCurrentUser`](#modelbelongstocurrentuser)
 
 Also see [example security rules](https://github.com/rmosolgo/batfire/blob/master/examples/security_rules.json), the [Jasmine spec suite](https://github.com/rmosolgo/batfire/tree/master/spec) or an [example app](http://github.com/rmosolgo/batmanjs-blog).
@@ -31,12 +31,12 @@ Also see [example security rules](https://github.com/rmosolgo/batfire/blob/maste
   <script src='/path/to/batfire.js'></script>
   ```
 
-- __YourApp `@syncsWithFirebase("your-app")`__
+- __`@syncsWithFirebase("your-app")`__
 
   For example,
 
   ```coffeescript
-  class App extends Batman.App
+  class MyApp extends Batman.App
     @syncsWithFirebase "my-firebase-app-name"
   ```
 
@@ -44,7 +44,7 @@ Also see [example security rules](https://github.com/rmosolgo/batfire/blob/maste
 
 # BatFire.Storage
 
-`BatFire.Storage` implements the [`Batman.StorageAdapter`](http://batmanjs.org/docs/api/batman.storageadapter.html) interface, so you can pass it to `@persist` in your model definition. ([Learn more about BatFire.Storage](#))
+`BatFire.Storage` implements the [`Batman.StorageAdapter`](http://batmanjs.org/docs/api/batman.storageadapter.html) interface, so you can pass it to `@persist` in your model definition. ([Learn more about BatFire.Storage](https://github.com/rmosolgo/batfire/blob/master/doc/model.md#batmanmodel))
 
 
 For example:
@@ -78,7 +78,7 @@ App.Sandwich.clear() # => clears the loaded set, stops listening for new sandwic
 
 # Authorization
 
-BatFire provides a lightweight wrapper around [FirebaseSimpleLogin](https://www.firebase.com/docs/security/simple-login-overview.html). ([Learn more about authorization](#))
+BatFire provides a lightweight wrapper around [FirebaseSimpleLogin](https://www.firebase.com/docs/security/simple-login-overview.html). ([Learn more about authorization](https://github.com/rmosolgo/batfire/blob/master/doc/app.md#authorization))
 
 You define providers in your app definition:
 
@@ -102,7 +102,7 @@ There are also view helpers:
 
 # Model.belongsToCurrentUser
 
-If your app `syncsWithFirebase` and `authorizesWithFirebase`, you can get some out-of-the-box features on your models, too. ([Learn more about belongsToCurrentUser](#))
+If your app `syncsWithFirebase` and `authorizesWithFirebase`, you can get some out-of-the-box features on your models, too. ([Learn more about belongsToCurrentUser](https://github.com/rmosolgo/batfire/blob/master/doc/model.md#belongstocurrentuseroptions))
 
 Call this inside a model definition:
 
@@ -127,7 +127,7 @@ class App extends Batman.App
   @syncs 'sandwichOfTheDay', as: "Sandwich"
 ```
 
-([Learn more about App.syncs](#))
+([Learn more about App.syncs](https://github.com/rmosolgo/batfire/blob/master/doc/app.md#syncsattrname-options))
 
 # To do
 
