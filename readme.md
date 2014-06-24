@@ -19,23 +19,11 @@ Also see [example security rules](https://github.com/rmosolgo/batfire/blob/maste
   bower install batfire
   ```
 
-  Or, download BatFire in a form of your choice:
-
-  - [CoffeeScript](https://raw.github.com/rmosolgo/batfire/master/batfire.coffee)
-  - [JavaScript](https://raw.github.com/rmosolgo/batfire/master/batfire.js)
-  - [Minified JavaScript](https://raw.github.com/rmosolgo/batfire/master/batfire.min.js)
+  Or, download BatFire in a form of your choice: [CoffeeScript](https://raw.github.com/rmosolgo/batfire/master/batfire.coffee), [JavaScript](https://raw.github.com/rmosolgo/batfire/master/batfire.js), [Minified JavaScript](https://raw.github.com/rmosolgo/batfire/master/batfire.min.js)
 
 - __Load the files:__
 
-  Be sure to include BatFire _after_ you include Firebase and batman.js. For example, in the asset pipeline:
-
-  ```coffeescript
-  #= require ./path/to/firebase
-  #= require ./path/to/batman
-  #= require ./path/to/batfire
-  ```
-
-  or in your HTML:
+  Be sure to include BatFire _after_ you include Firebase and batman.js. For example:
 
   ```html
   <script src='/path/to/firebase.js'></script>
@@ -52,23 +40,21 @@ Also see [example security rules](https://github.com/rmosolgo/batfire/blob/maste
     @syncsWithFirebase "my-firebase-app-name"
   ```
 
-  will sync with `https://my-firebase-app-name.firebaseio.com`. Your "raw" Firebase reference is also available to you:
-
-  ```coffeescript
-  App.run()
-  App.get('firebase.ref') # => your Firebase reference
-  ```
+  will sync with `https://my-firebase-app-name.firebaseio.com`.
 
 # BatFire.Storage
 
-`BatFire.Storage` implements the [`Batman.StorageAdapter`](http://batmanjs.org/docs/api/batman.storageadapter.html) interface, so you can pass it to `@persist` in your model definition. For example:
+`BatFire.Storage` implements the [`Batman.StorageAdapter`](http://batmanjs.org/docs/api/batman.storageadapter.html) interface, so you can pass it to `@persist` in your model definition. ([Learn more about BatFire.Storage](#))
+
+
+For example:
 
 ```coffeescript
 class App.Sandwich extends Batman.Model
   @resourceName: 'sandwich'
   @persist BatFire.Storage
-  @encode "meats", "tomato", "lettuce" # @primaryKey will be encoded automatically
-  @encodesTimestamps() # added by BatFire.Storage
+  @encode "meats", "tomato", "lettuce"
+  @encodesTimestamps()
 ```
 
 Now, all the storage operations of your records will trigger updates on Firebase:
@@ -90,128 +76,58 @@ App.Sandwich.get('all') # => starts listening for new sandwiches on Firebase, ad
 App.Sandwich.clear() # => clears the loaded set, stops listening for new sandwiches
 ```
 
-While the model is connected (ie, you didn't call `Model.clear()`), you can access its Firebase reference directly:
+# Authorization
+
+BatFire provides a lightweight wrapper around [FirebaseSimpleLogin](https://www.firebase.com/docs/security/simple-login-overview.html). ([Learn more about authorization](#))
+
+You define providers in your app definition:
 
 ```coffeescript
-App.Sandwich.get('ref') # => bare metal Firebase!
+class App extends Batman.App
+  @syncsWithFirebase('my-app-name')
+  @authorizesWithFirebase('github', 'facebook')
 ```
 
-By the way, all model data URLs are prefixed with `BatFire/records`.
+There are also view helpers:
 
-__Notes about `BatFire.Storage`:__
+```html
+<div data-showif='loggedIn'>
+  <span data-bind='currentUser.username | prepend "Welcome, " | append "!"'></span>
+  <button data-event-click='logout'>Log out</button>
+</div>
+<div data-showif='loggedOut'>
+  <button data-event-click='login | withArguments "github"'>Log in</button>
+</div>
+```
 
-- `BatFire.Storage` will automatically set your model to `@encode` its `primaryKey`
-- `@encodesTimestamps()` will encode `created_at` and `updated_at` as ISO strings in the model's JSON.
-- You can listen to _all_ records by calling `Model.load()`. This sets up handlers for `child_added`, `child_removed`, and `child_changed`. Calling `Model.clear()` empties the loaded set and stops listening.
+# Model.belongsToCurrentUser
+
+If your app `syncsWithFirebase` and `authorizesWithFirebase`, you can get some out-of-the-box features on your models, too. ([Learn more about belongsToCurrentUser](#))
+
+Call this inside a model definition:
+
+```coffeescript
+class App.Sandwich extends Batman.Model
+  @belongsToCurrentUser(scoped: true, ownership: true)
+```
+
+```coffeescript
+yourSandwich.get('hasOwner')              # => true
+yourSandwich.get('isOwnedByCurrentUser')  # => false
+yourSandwich.get('created_by_uid')        # => "github:123456"
+```
 
 # App.syncs
 
-`App.syncs` binds keypaths on your app to Firebase so that if they're updated on client, the updates are pushed to the others. To create a syncing accessor on your app, just call `@syncs` and use it like a normal accessor:
+`App.syncs` binds keypaths on your app to Firebase so that if they're updated on client, the updates are pushed to the others:
 
 ```coffeescript
 class App extends Batman.App
          # key...            # optional: constructor name for loading from Firebase, relative to App
   @syncs 'sandwichOfTheDay', as: "Sandwich"
-App.run()
-
-mySandwich = new App.Sandwich({name: "French Dip", price: "$7.50"})
-App.set('sandwichOfTheDay', mySandwich)
-App.set('sandwichOfTheDay.price', "$6.50")
-# elsewhere...
-App.get('sandwichOfTheDay') # => <App.Sandwich, "French Dip">
-App.get('sandwichOfTheDay.price') # => "$6.50"
 ```
 
-Under the hood, all these accessors' Firebase URLs are prefixed with `BatFire/syncs/`.
-
-__This comes with some caveats__:
-
-- If you don't [__secure__ the paths on Firebase](https://www.firebase.com/docs/security/security-rules.html) ([examples](https://github.com/rmosolgo/batfire/blob/master/examples/security_rules.json)], a malevolent user could update these properties via the console and screw everything up!
-- Whatever you're syncing will be sent `toJSON` if it has a `toJSON` method, otherwise it will be sent to Firebase as-is.
-- You may specify a constructor function name with `as:`. Objects will be sent to Firebase, and when new values come in, the value will be passed to that constructor.
-- This doesn't work: `App.get('sandwichOfTheDay').set('price')`. Sorry! Do it all at once: `App.set('sandwichOfTheDay.price', "$6.25")`.
-
-
-# App.authorizesWithFirebase
-
-BatFire provides a lightweight wrapper around [FirebaseSimpleLogin](https://www.firebase.com/docs/security/simple-login-overview.html). If you want to use it, make sure to
-
-- include the Firebase login client (see [FirebaseSimpleLogin overview](https://www.firebase.com/docs/security/simple-login-overview.html))
-- register your app with whatever providers you're using (eg, [github](https://www.firebase.com/docs/security/simple-login-github.html))
-
-Promise me that you won't depend on client-side authentication to protect your data. Use __[Firebase security rules](https://www.firebase.com/docs/security/security-rules.html)__ ([examples](https://github.com/rmosolgo/batfire/blob/master/examples/security_rules.json)! Now, in your App definition:
-
-```coffeescript
-class App extends Batman.App
-  @syncsWithFirebase('my-app-name')
-  @authorizesWithFirebase()
-```
-
-This adds to `App`:
-
-- `App.login(providerString)` initiates the login process with that provider (eg, `'github'`).
-- `App.get('currentUser')` is where all the user information will be. It's a `Batman.Object`, so it's observable.
-- `App.get('loggedIn')` and
-- `App.get('loggedOut')` say whether `App.currentUser` is present.
-- `App.logout()` logs out the current user.
-- `App.get('auth')` is the underlying Firebase auth object.
-
-Since these are on App, you can use them in bindings:
-
-```html
-<div data-showif='loggedOut'>
-  <button data-event-click='login | withArguments "github"'>Log in</button>
-</div>
-<div data-showif='loggedIn'>
-  <span data-bind='currentUser.username | prepend "Welcome, " | append "!"'></span>
-  <button data-event-click='logout'>Log out</button>
-</div>
-```
-
-## Provider Whitelist
-```coffeescript
-class App extends Batman.App
-  @authorizesWithFirebase('github', 'twitter')
-```
-
-If you pass strings to `authorizesWithFirebase`:
-
-- they will be available at `App.get('providers')`
-- `App.login` will throw an error if the passed string isn't on the list
-
-## Default Provider
-
-If you pass one provider string to `authorizesWithFirebase`, it will be used by `App.login`:
-
-```coffeescript
-class App extends Batman.App
-  # ...
-  @authorizesWithFirebase('facebook')
-App.run()
-
-App.login() # will use 'facebook'
-```
-
-# Model.belongsToCurrentUser
-
-If your app `syncsWithFirebase` and `authorizesWithFirebase`, you can get some out-of-the-box features on your models, too, with `Model.belongsToCurrentUser`. Call this inside a model definition:
-
-```coffeescript
-class App.Sandwich extends Batman.Model
-  @belongsToCurrentUser scoped: true, ownership: true
-```
-
-Calling __`@belongsToCurrentUser`__ causes this model to:
-- save the current user's `email`, `uid`, `username` on new records as `created_by_#{attr}`
-- add `ownedByCurrentUser` and `hasOwner` accessors to records
-
-The __`ownership: true`__ option:
-- provides client-side validation on records when being updated or destroyed so that non-creator users can't modify or destroy them (_this should be complemented by Security Rules_, for [example](https://github.com/rmosolgo/batfire/blob/master/examples/security_rules.json)...).
-- encodes `has_user_ownership=true`, which you can use in your security rules.
-
-The __`scoped: true`__ option:
-- makes records visible only to the users who created them. Behind the scenes, their Firebase URLs are namespaced by `BatFire/records/scoped/$uid`. This way, calling `Model.load` will only load ones that match `currentUser.uid`. It's not Fort Knox, though. Use a Security Rule (like [these](https://github.com/rmosolgo/batfire/blob/master/examples/security_rules.json)) to make records read-protected!
-- when a user signs out, the loaded set is cleared.
+([Learn more about App.syncs](#))
 
 # To do
 
